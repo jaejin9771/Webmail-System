@@ -20,6 +20,6 @@
 
         <p> <a href="main_menu"> 메일 읽기 </a> </p>
         <p> <a href="write_mail"> 메일 쓰기 </a> </p>
-        <p><a href="login.do?menu=<%= CommandType.LOGOUT %>">로그아웃</a></p>
+        <p><a href="${pageContext.request.contextPath}/logout">로그아웃</a></p>
     </body>
 </html>
