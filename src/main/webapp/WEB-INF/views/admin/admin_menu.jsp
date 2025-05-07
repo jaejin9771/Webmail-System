@@ -15,7 +15,7 @@
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <title>사용자 관리 메뉴</title>
-        <link type="text/css" rel="stylesheet" href="css/main_style.css" />
+        <link type="text/css" rel="stylesheet" href="${pageContext.request.contextPath}/css/main_style.css" />
         <script>
             <c:if test="${!empty msg}">
             alert("${msg}");

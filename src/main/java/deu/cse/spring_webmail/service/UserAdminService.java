@@ -4,54 +4,91 @@
  */
 package deu.cse.spring_webmail.service;
 
-import deu.cse.spring_webmail.model.UserAdminAgent;
-import jakarta.servlet.ServletContext;
+import java.util.Arrays;
+import java.util.Base64;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.*;
+import org.springframework.web.client.RestTemplate;
 /**
  *
  * @author jaejin
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserAdminService {
 
-    private final ServletContext ctx;
+    @Value("${james.webadmin.base-url}")
+    private String baseUrl;
 
-    @Value("${root.id}")
-    private String rootId;
+    @Value("${james.webadmin.auth.id}")
+    private String username;
 
-    @Value("${root.password}")
-    private String rootPassword;
+    @Value("${james.webadmin.auth.password}")
+    private String password;
 
-    @Value("${admin.id}")
-    private String adminId;
+    private final RestTemplate restTemplate = new RestTemplate();
 
-    @Value("${james.control.port}")
-    private Integer jamesPort;
-
-    @Value("${james.host}")
-    private String jamesHost;
-
-    private UserAdminAgent createAgent() {
-        String cwd = ctx.getRealPath(".");
-        return new UserAdminAgent(jamesHost, jamesPort, cwd, rootId, rootPassword, adminId);
+    private HttpHeaders createHeaders() {
+        String auth = username + ":" + password;
+        String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes());
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Basic " + encodedAuth);
+        headers.setContentType(MediaType.TEXT_PLAIN);
+        return headers;
     }
 
-    public boolean addUser(String id, String password) {
-        return createAgent().addUser(id, password);
+    public boolean addUser(String userId, String userPassword) {
+        String url = baseUrl + "/users/" + userId;
+        HttpEntity<String> request = new HttpEntity<>(userPassword, createHeaders());
+
+        try {
+            ResponseEntity<Void> response = restTemplate.exchange(url, HttpMethod.PUT, request, Void.class);
+            return response.getStatusCode() == HttpStatus.NO_CONTENT;
+        } catch (Exception e) {
+            log.error("addUser() failed: {}", e.getMessage());
+            return false;
+        }
     }
 
-    public void deleteUsers(String[] users) {
-        createAgent().deleteUsers(users);
+    public boolean deleteUsers(String[] userList) {
+        boolean allSuccess = true;
+
+        for (String userId : userList) {
+            String url = baseUrl + "/users/" + userId;
+            HttpEntity<Void> request = new HttpEntity<>(createHeaders());
+
+            try {
+                ResponseEntity<Void> response = restTemplate.exchange(url, HttpMethod.DELETE, request, Void.class);
+                if (response.getStatusCode() != HttpStatus.NO_CONTENT) {
+                    allSuccess = false;
+                }
+            } catch (Exception e) {
+                log.error("deleteUser({}) failed: {}", userId, e.getMessage());
+                allSuccess = false;
+            }
+        }
+
+        return allSuccess;
     }
 
     public List<String> getUserList() {
-        List<String> list = createAgent().getUserList();
-        list.sort(String::compareTo);
-        return list;
+        String url = baseUrl + "/users";
+        HttpEntity<Void> request = new HttpEntity<>(createHeaders());
+
+        try {
+            ResponseEntity<String[]> response = restTemplate.exchange(url, HttpMethod.GET, request, String[].class);
+            List<String> users = Arrays.asList(response.getBody());
+            users.sort(String::compareTo);
+            return users;
+        } catch (Exception e) {
+            log.error("getUserList() failed: {}", e.getMessage());
+            return List.of();
+        }
     }
 }

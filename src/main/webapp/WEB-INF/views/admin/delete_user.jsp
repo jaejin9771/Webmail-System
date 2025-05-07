@@ -12,7 +12,7 @@
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <title>사용자 제거 화면</title>
-        <link type="text/css" rel="stylesheet" href="css/main_style.css" />
+        <link type="text/css" rel="stylesheet" href="${pageContext.request.contextPath}/css/main_style.css" />
         <script>
             function getConfirmResult() {
                 var result = confirm("사용자를 정말로 삭제하시겠습니까?");
