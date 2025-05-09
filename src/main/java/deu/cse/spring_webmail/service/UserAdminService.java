@@ -11,9 +11,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.web.client.RestTemplate;
+
 /**
  *
  * @author jaejin
@@ -34,18 +37,26 @@ public class UserAdminService {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
-    private HttpHeaders createHeaders() {
+    /**
+     * 인증 헤더 생성 (Basic Auth)
+     */
+    private HttpHeaders createAuthHeaders() {
         String auth = username + ":" + password;
         String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes());
+
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Basic " + encodedAuth);
-        headers.setContentType(MediaType.TEXT_PLAIN);
         return headers;
     }
 
     public boolean addUser(String userId, String userPassword) {
         String url = baseUrl + "/users/" + userId;
-        HttpEntity<String> request = new HttpEntity<>(userPassword, createHeaders());
+        HttpHeaders headers = createAuthHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);  // JSON 지정
+        headers.setAccept(List.of(MediaType.APPLICATION_JSON));  // 명시
+
+        String jsonBody = String.format("{\"password\": \"%s\"}", userPassword);
+        HttpEntity<String> request = new HttpEntity<>(jsonBody, headers);
 
         try {
             ResponseEntity<Void> response = restTemplate.exchange(url, HttpMethod.PUT, request, Void.class);
@@ -56,12 +67,15 @@ public class UserAdminService {
         }
     }
 
+    /**
+     * 사용자 삭제 - DELETE /users/{username}
+     */
     public boolean deleteUsers(String[] userList) {
         boolean allSuccess = true;
 
         for (String userId : userList) {
             String url = baseUrl + "/users/" + userId;
-            HttpEntity<Void> request = new HttpEntity<>(createHeaders());
+            HttpEntity<Void> request = new HttpEntity<>(createAuthHeaders());
 
             try {
                 ResponseEntity<Void> response = restTemplate.exchange(url, HttpMethod.DELETE, request, Void.class);
@@ -77,13 +91,22 @@ public class UserAdminService {
         return allSuccess;
     }
 
+    /**
+     * 사용자 목록 조회 - GET /users (응답: { "users": [...] })
+     */
     public List<String> getUserList() {
         String url = baseUrl + "/users";
-        HttpEntity<Void> request = new HttpEntity<>(createHeaders());
+        HttpEntity<Void> request = new HttpEntity<>(createAuthHeaders());
 
         try {
-            ResponseEntity<String[]> response = restTemplate.exchange(url, HttpMethod.GET, request, String[].class);
-            List<String> users = Arrays.asList(response.getBody());
+            ResponseEntity<Map<String, List<String>>> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    request,
+                    new ParameterizedTypeReference<>() {
+            }
+            );
+            List<String> users = response.getBody().get("users");
             users.sort(String::compareTo);
             return users;
         } catch (Exception e) {

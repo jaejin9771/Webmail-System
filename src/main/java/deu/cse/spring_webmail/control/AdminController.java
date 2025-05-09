@@ -18,7 +18,7 @@ public class AdminController {
 
     private final UserAdminService userAdminService;
 
-    @GetMapping("/menu")
+    @GetMapping("/admin_menu")
     public String adminMenu(Model model) {
         List<String> userList = userAdminService.getUserList();
         model.addAttribute("userList", userList);
@@ -30,7 +30,7 @@ public class AdminController {
         return "admin/add_user";
     }
 
-    @PostMapping("/add_user.do")
+    @PostMapping("/add_user")
     public String addUserDo(@RequestParam String id,
                              @RequestParam String password,
                              RedirectAttributes attrs) {
@@ -50,7 +50,7 @@ public class AdminController {
         return "admin/delete_user";
     }
 
-    @PostMapping("/delete_user.do")
+    @PostMapping("/delete_user")
     public String deleteUserDo(@RequestParam("selectedUsers") String[] selectedUsers,
                                RedirectAttributes attrs) {
         boolean result = userAdminService.deleteUsers(selectedUsers);
