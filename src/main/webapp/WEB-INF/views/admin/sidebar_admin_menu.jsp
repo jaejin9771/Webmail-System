@@ -23,6 +23,6 @@
         --%>
         <p><a href="add_user">사용자 추가</a> </p>
         <p><a href="delete_user"> 사용자 제거</a> </p>
-        <p><a href="login.do?menu=<%= CommandType.LOGOUT %>">로그아웃</a></p>
+        <p><a href="${pageContext.request.contextPath}/logout">로그아웃</a></p>
     </body>
 </html>

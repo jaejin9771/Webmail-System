@@ -36,7 +36,7 @@
                         String cwd =  this.getServletContext().getRealPath(".");
                         UserAdminAgent agent = new UserAdminAgent("localhost", 4555, cwd);
             --%>
-            <form name="DeleteUser" action="delete_user.do" method="POST">
+            <form name="DeleteUser" action="delete_user" method="POST">
                 <%
                     for (String userId : (java.util.List<String>) request.getAttribute("userList")) {
                         out.print("<label><input type=checkbox name=\"selectedUsers\" "
