@@ -44,7 +44,7 @@ public class AuthController {
         if (mailService.validateLogin(host, userid, passwd)) {
             session.setAttribute("userid", userid);
             session.setAttribute("password", passwd);
-            return userid.equals(ADMIN_ID) ? "redirect:/admin/menu" : "redirect:/main_menu";
+            return userid.equals(ADMIN_ID) ? "redirect:/admin/admin_menu" : "redirect:/main_menu";
         }
 
         attrs.addFlashAttribute("msg", "로그인 실패");
