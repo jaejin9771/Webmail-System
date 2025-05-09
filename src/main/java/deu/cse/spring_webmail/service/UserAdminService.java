@@ -92,26 +92,31 @@ public class UserAdminService {
     }
 
     /**
-     * 사용자 목록 조회 - GET /users (응답: { "users": [...] })
+     * 사용자 목록 조회 - GET /users (응답: { "userList": [...] })
      */
     public List<String> getUserList() {
         String url = baseUrl + "/users";
         HttpEntity<Void> request = new HttpEntity<>(createAuthHeaders());
 
         try {
-            ResponseEntity<Map<String, List<String>>> response = restTemplate.exchange(
+            ResponseEntity<List<Map<String, String>>> response = restTemplate.exchange(
                     url,
                     HttpMethod.GET,
                     request,
-                    new ParameterizedTypeReference<>() {
+                    new ParameterizedTypeReference<List<Map<String, String>>>() {
             }
             );
-            List<String> users = response.getBody().get("users");
-            users.sort(String::compareTo);
+
+            List<String> users = response.getBody().stream()
+                    .map(entry -> entry.get("username"))
+                    .sorted()
+                    .toList();
+
             return users;
         } catch (Exception e) {
             log.error("getUserList() failed: {}", e.getMessage());
             return List.of();
         }
     }
+
 }

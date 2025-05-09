@@ -40,7 +40,7 @@ public class AdminController {
         } else {
             attrs.addFlashAttribute("msg", String.format("사용자(%s) 추가 실패", id));
         }
-        return "redirect:/admin/menu";
+        return "redirect:/admin/admin_menu";
     }
 
     @GetMapping("/delete_user")
@@ -59,6 +59,6 @@ public class AdminController {
         } else {
             attrs.addFlashAttribute("msg", "일부 사용자를 삭제하지 못했습니다.");
         }
-        return "redirect:/admin/menu";
+        return "redirect:/admin/admin_menu";
     }
 }
