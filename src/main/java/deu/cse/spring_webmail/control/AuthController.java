@@ -4,7 +4,10 @@
  */
 package deu.cse.spring_webmail.control;
 
+import deu.cse.spring_webmail.model.MessageFormatter;
+import deu.cse.spring_webmail.model.Pop3Agent;
 import deu.cse.spring_webmail.service.MailService;
+import jakarta.mail.Message;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -52,12 +55,15 @@ public class AuthController {
     }
 
     @GetMapping("/main_menu")
-    public String mainMenu(Model model) {
+    public String showMainMenu(@RequestParam(name = "page", defaultValue = "1") int page, Model model) {
         String host = (String) session.getAttribute("host");
         String userid = (String) session.getAttribute("userid");
         String password = (String) session.getAttribute("password");
 
-        model.addAttribute("messageList", mailService.getMessageList(host, userid, password));
+        String htmlTable = mailService.getPagedMessageTable(host, userid, password, page, 20);
+
+        model.addAttribute("messageList", htmlTable);
+        model.addAttribute("currentPage", page);
         return "main_menu";
     }
 

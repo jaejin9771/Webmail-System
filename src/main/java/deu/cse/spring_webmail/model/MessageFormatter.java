@@ -18,49 +18,68 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RequiredArgsConstructor
 public class MessageFormatter {
-    @NonNull private String userid;  // 파일 임시 저장 디렉토리 생성에 필요
+
+    @NonNull
+    private String userid;  // 파일 임시 저장 디렉토리 생성에 필요
     private HttpServletRequest request = null;
-    
+
     // 220612 LJM - added to implement REPLY
-    @Getter private String sender;
-    @Getter private String subject;
-    @Getter private String body;
+    @Getter
+    private String sender;
+    @Getter
+    private String subject;
+    @Getter
+    private String body;
 
-
-    public String getMessageTable(Message[] messages) {
+    public String getMessageTable(Message[] messages, int page, int pageSize, int totalMessages) {
         StringBuilder buffer = new StringBuilder();
+        int baseNo = (page - 1) * pageSize;
+        int totalPages = (int) Math.ceil((double) totalMessages / pageSize);
+        int startIndex = totalMessages - (page - 1) * pageSize;
 
-        // 메시지 제목 보여주기
-        buffer.append("<table>");  // table start
-        buffer.append("<tr> "
-                + " <th> No. </td> "
-                + " <th> 보낸 사람 </td>"
-                + " <th> 제목 </td>     "
-                + " <th> 보낸 날짜 </td>   "
-                + " <th> 삭제 </td>   "
-                + " </tr>");
+        buffer.append("<style>")
+                .append("table { table-layout: fixed; width: 100%; word-wrap: break-word; }")
+                .append("th, td { border: 1px solid #333; padding: 8px; text-align: left; }")
+                .append("th:nth-child(1), td:nth-child(1) { width: 5%; }")
+                .append("th:nth-child(2), td:nth-child(2) { width: 20%; }")
+                .append("th:nth-child(3), td:nth-child(3) { width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; }")
+                .append("th:nth-child(4), td:nth-child(4) { width: 20%; }")
+                .append("th:nth-child(5), td:nth-child(5) { width: 10%; }")
+                .append("</style>");
+
+        buffer.append("<table>");
+        buffer.append("<tr><th>No.</th><th>보낸 사람</th><th>제목</th><th>보낸 날짜</th><th>삭제</th></tr>");
 
         for (int i = messages.length - 1; i >= 0; i--) {
-            MessageParser parser = new MessageParser(messages[i], userid);
-            parser.parse(false);  // envelope 정보만 필요
-            // 메시지 헤더 포맷
-            // 추출한 정보를 출력 포맷 사용하여 스트링으로 만들기
-            buffer.append("<tr> "
-                    + " <td id=no>" + (i + 1) + " </td> "
-                    + " <td id=sender>" + parser.getFromAddress() + "</td>"
-                    + " <td id=subject> "
-                    + " <a href=show_message?msgid=" + (i + 1) + " title=\"메일 보기\"> "
-                    + parser.getSubject() + "</a> </td>"
-                    + " <td id=date>" + parser.getSentDate() + "</td>"
-                    + " <td id=delete>"
-                    + "<a href=delete_mail.do"
-                    + "?msgid=" + (i + 1) + "> 삭제 </a>" + "</td>"
-                    + " </tr>");
+        MessageParser parser = new MessageParser(messages[i], userid);
+        parser.parse(false);
+        int no = baseNo + (messages.length - i);
+        int realIndex = startIndex - (messages.length - 1 - i);  // 실제 서버 상 메일 인덱스
+
+        buffer.append("<tr>")
+              .append("<td>" + no + "</td>")
+              .append("<td>" + parser.getFromAddress() + "</td>")
+              .append("<td><a href=show_message?msgid=" + realIndex + ">" + parser.getSubject() + "</a></td>")
+              .append("<td>" + parser.getSentDate() + "</td>")
+              .append("<td><a href=delete_mail.do?msgid=" + realIndex + ">삭제</a></td>")
+              .append("</tr>");
+    }
+    buffer.append("</table>");
+
+        // 페이지 링크 추가
+        buffer.append("<div style='text-align:center; margin-top:10px;'>");
+        if (page > 1) {
+            buffer.append("<a href=main_menu?page=" + (page - 1) + ">이전</a> | ");
         }
-        buffer.append("</table>");
+        for (int i = Math.max(1, page - 1); i <= Math.min(totalPages, page + 1); i++) {
+            buffer.append("<a href=main_menu?page=" + i + ">" + i + "</a> ");
+        }
+        if (page < totalPages) {
+            buffer.append("| <a href=main_menu?page=" + (page + 1) + ">다음</a>");
+        }
+        buffer.append("</div>");
 
         return buffer.toString();
-//        return "MessageFormatter 테이블 결과";
     }
 
     public String getMessage(Message message) {
@@ -69,7 +88,7 @@ public class MessageFormatter {
         // MessageParser parser = new MessageParser(message, userid);
         MessageParser parser = new MessageParser(message, userid, request);
         parser.parse(true);
-        
+
         sender = parser.getFromAddress();
         subject = parser.getSubject();
         body = parser.getBody();
@@ -92,7 +111,7 @@ public class MessageFormatter {
 
         return buffer.toString();
     }
-    
+
     public void setRequest(HttpServletRequest request) {
         this.request = request;
     }
