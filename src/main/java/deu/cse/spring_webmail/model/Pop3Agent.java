@@ -4,6 +4,7 @@
  */
 package deu.cse.spring_webmail.model;
 
+import jakarta.mail.Address;
 import jakarta.mail.FetchProfile;
 import jakarta.mail.Flags;
 import jakarta.mail.Folder;
@@ -12,6 +13,8 @@ import jakarta.mail.Session;
 import jakarta.mail.Store;
 import java.util.Properties;
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -24,24 +27,40 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @NoArgsConstructor        // 기본 생성자 생성
 public class Pop3Agent {
-    @Getter @Setter private String host;
-    @Getter @Setter private String userid;
-    @Getter @Setter private String password;
-    @Getter @Setter private Store store;
-    @Getter @Setter private String excveptionType;
-    @Getter @Setter private HttpServletRequest request;
-    
+
+    @Getter
+    @Setter
+    private String host;
+    @Getter
+    @Setter
+    private String userid;
+    @Getter
+    @Setter
+    private String password;
+    @Getter
+    @Setter
+    private Store store;
+    @Getter
+    @Setter
+    private String excveptionType;
+    @Getter
+    @Setter
+    private HttpServletRequest request;
+
     // 220612 LJM - added to implement REPLY
-    @Getter private String sender;
-    @Getter private String subject;
-    @Getter private String body;
-    
+    @Getter
+    private String sender;
+    @Getter
+    private String subject;
+    @Getter
+    private String body;
+
     public Pop3Agent(String host, String userid, String password) {
         this.host = host;
         this.userid = userid;
         this.password = password;
     }
-    
+
     public boolean validate() {
         boolean status = false;
 
@@ -89,38 +108,41 @@ public class Pop3Agent {
     /*
      * 페이지 단위로 메일 목록을 보여주어야 함.
      */
-    public String getMessageList() {
-        String result = "";
+    public Message[] getMessages(int page, int pageSize) {
         Message[] messages = null;
-
-        if (!connectToStore()) {  // 3.1
-            log.error("POP3 connection failed!");
-            return "POP3 연결이 되지 않아 메일 목록을 볼 수 없습니다.";
-        }
-
         try {
-            // 메일 폴더 열기
-            Folder folder = store.getFolder("INBOX");  // 3.2
-            folder.open(Folder.READ_ONLY);  // 3.3
+            if (!connectToStore()) {
+                return null;
+            }
 
-            // 현재 수신한 메시지 모두 가져오기
-            messages = folder.getMessages();      // 3.4
-            FetchProfile fp = new FetchProfile();
-            // From, To, Cc, Bcc, ReplyTo, Subject & Date
-            fp.add(FetchProfile.Item.ENVELOPE);
-            folder.fetch(messages, fp);
+            Folder inbox = store.getFolder("INBOX");
+            inbox.open(Folder.READ_ONLY);
 
-            MessageFormatter formatter = new MessageFormatter(userid);  //3.5
-            result = formatter.getMessageTable(messages);   // 3.6
+            int totalMessages = inbox.getMessageCount();
+            int end = totalMessages - (page - 1) * pageSize;
+            int start = Math.max(end - pageSize + 1, 1);
 
-            folder.close(true);  // 3.7
-            store.close();       // 3.8
-        } catch (Exception ex) {
-            log.error("Pop3Agent.getMessageList() : exception = {}", ex.getMessage());
-            result = "Pop3Agent.getMessageList() : exception = " + ex.getMessage();
-        } finally {
-            return result;
+            messages = inbox.getMessages(start, end);
+            request.setAttribute("messageStartIndex", start); // 삭제용 인덱스 추적용
+        } catch (Exception e) {
+            log.error("getMessages(page) error: ", e);
         }
+        return messages;
+    }
+
+    public int getTotalMessageCount() {
+        int count = 0;
+        try {
+            if (!connectToStore()) {
+                return 0;
+            }
+            Folder inbox = store.getFolder("INBOX");
+            inbox.open(Folder.READ_ONLY);
+            count = inbox.getMessageCount();
+        } catch (Exception e) {
+            log.error("getTotalMessageCount() error: ", e);
+        }
+        return count;
     }
 
     public String getMessage(int n) {
@@ -178,5 +200,5 @@ public class Pop3Agent {
             return status;
         }
     }
-    
+
 }

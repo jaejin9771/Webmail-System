@@ -1,6 +1,8 @@
 package deu.cse.spring_webmail.service;
 
+import deu.cse.spring_webmail.model.MessageFormatter;
 import deu.cse.spring_webmail.model.Pop3Agent;
+import jakarta.mail.Message;
 import org.springframework.stereotype.Service;
 
 /**
@@ -15,12 +17,12 @@ public class MailService {
         return agent.validate();
     }
 
-    public String getMessageList(String host, String userid, String password) {
-        Pop3Agent agent = new Pop3Agent();
-        agent.setHost(host);
-        agent.setUserid(userid);
-        agent.setPassword(password);
-        return agent.getMessageList();
+    public String getPagedMessageTable(String host, String userid, String password, int page, int pageSize) {
+        Pop3Agent agent = new Pop3Agent(host, userid, password);
+        Message[] messages = agent.getMessages(page, pageSize);
+        int totalMessages = agent.getTotalMessageCount();
+
+        MessageFormatter formatter = new MessageFormatter(userid);
+        return formatter.getMessageTable(messages, page, pageSize, totalMessages);
     }
 }
-
