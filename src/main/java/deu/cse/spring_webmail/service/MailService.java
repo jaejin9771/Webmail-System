@@ -4,6 +4,7 @@ import deu.cse.spring_webmail.model.MessageFormatter;
 import deu.cse.spring_webmail.model.Pop3Agent;
 import jakarta.mail.Message;
 import org.springframework.stereotype.Service;
+import deu.cse.spring_webmail.model.ImapAgent;
 
 /**
  *
@@ -24,5 +25,10 @@ public class MailService {
 
         MessageFormatter formatter = new MessageFormatter(userid);
         return formatter.getMessageTable(messages, page, pageSize, totalMessages);
+    }
+    
+        public String getSentMessageList(String host, String userid, String password) {
+        ImapAgent agent = new ImapAgent(host, userid, password);
+        return agent.getMessageList();  // 보낸 메일함 (IMAP)
     }
 }

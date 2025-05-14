@@ -31,8 +31,10 @@
     @Slf4j
     public class SmtpAgent {
 
+        
         @Getter @Setter  protected String host = null;
         @Getter @Setter  protected String userid = null;
+        @Getter @Setter  protected String imapPassword = null;
         @Getter @Setter protected String to = null;
         @Getter @Setter protected String cc = null;
         @Getter @Setter protected String subj = null;
@@ -40,12 +42,8 @@
         @Getter @Setter protected String file1 = null;
         @Getter @Setter private String fileName;
 
-
-        private String jdbcUrl;
-        private String dbUser;
-        private String dbPassword;
-        private String jdbcDriver;
-        
+        private Message lastMessage;
+            
         public SmtpAgent(String host, String userid) {
             this.host = host;
             this.userid = userid;
@@ -122,17 +120,16 @@
                 }
                 msg.setContent(mp);
 
+                this.lastMessage = msg;
                 // 메일 전송
                 Transport.send(msg);
 
-                SentMail mail = new SentMail(jdbcUrl, dbUser, dbPassword, jdbcDriver);
-                mail.setSender(this.userid);
-                mail.setRecipient(this.to);
-                mail.setReference(this.cc);
-                mail.setMailName(this.subj);
-                mail.setMailBody(this.body);
-                mail.setFileName(fileName);
-                mail.Save();
+                if (imapPassword != null && !imapPassword.isEmpty()) {
+                    ImapAgent imap = new ImapAgent(this.host, this.userid, this.imapPassword);
+                    imap.saveToSentFolder(msg);
+                } else {
+                    log.warn("imapPassword가 설정되지 않아 보낸메일 저장 생략됨");
+                }
                 
                 
                 // 메일 전송 완료되었으므로 서버에 저장된
