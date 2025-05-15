@@ -35,7 +35,6 @@ public class SentMail {
         this.userName = userName;
         this.password = password;
         this.jdbcDriver = jdbcDriver;
-        log.debug("SentMail 생성자 호출: jdbcUrl = {}, user = {}", jdbcUrl, userName);
     }
     
     public boolean Save() {
@@ -102,8 +101,6 @@ public class SentMail {
                 log.error("자원 해제 실패", ex);
             }
         }
-
         return mailList;
     }
-
 }

@@ -1,100 +1,82 @@
 package deu.cse.spring_webmail.control;
 
-import deu.cse.spring_webmail.model.SentMail;
-import deu.cse.spring_webmail.model.SentMailFormatter;
+import deu.cse.spring_webmail.model.ImapAgent;
+import deu.cse.spring_webmail.model.MessageFormatter;
+import deu.cse.spring_webmail.service.MailService;
+import jakarta.mail.Folder;
+import jakarta.mail.Message;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-
-import java.util.List;
-
-@Controller
-public class SentMailController {
-
-    @Value("${spring.datasource.url}")
-    private String jdbcUrl;
-
-    @Value("${spring.datasource.username}")
-    private String dbUser;
-
-    @Value("${spring.datasource.password}")
-    private String dbPassword;
-
-    @Value("${spring.datasource.driver-class-name}")
-    private String jdbcDriver;
-
-    @GetMapping("/sent_mail_list")
-    public String showSentMail(HttpSession session, Model model) {
-        String userid = (String) session.getAttribute("userid");
-        if (userid == null) {
-            return "redirect:/login";
-        }
-
-        SentMail sentMail = new SentMail(jdbcUrl, dbUser, dbPassword, jdbcDriver);
-        List<SentMail> sentList = sentMail.getSentMailList(userid);
-
-        SentMailFormatter formatter = new SentMailFormatter();
-        String messageList = formatter.getMessageTable(sentList);
-
-        model.addAttribute("messageList", messageList);
-        return "sent_mail/sent_mail_list";
-    }
-}
-
-
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
-package deu.cse.spring_webmail.control;
-
-/**
- *
- * @author user
- */
-import deu.cse.spring_webmail.model.SentMail;
-import deu.cse.spring_webmail.model.SentMailFormatter;
-import jakarta.servlet.http.HttpSession;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-
-import java.util.List;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
+@Slf4j
 public class SentMailController {
 
-    @Value("${spring.datasource.url}")
-    private String jdbcUrl;
+    @Autowired private HttpSession session;
+    @Autowired private HttpServletRequest request;
+    @Autowired private MailService mailService;
 
-    @Value("${spring.datasource.username}")
-    private String dbUser;
-
-    @Value("${spring.datasource.password}")
-    private String dbPassword;
-
-    @Value("${spring.datasource.driver-class-name}")
-    private String jdbcDriver;
-
+    // 보낸 메일 목록 보기
     @GetMapping("/sent_mail_list")
-    public String showSentMail(HttpSession session, Model model) {
+    public String sentMailList(Model model) {
+        String host = (String) session.getAttribute("host");
         String userid = (String) session.getAttribute("userid");
-        if (userid == null) {
-            return "redirect:/login";
-        }
+        String password = (String) session.getAttribute("password");
 
-        SentMail sentMail = new SentMail(jdbcUrl, dbUser, dbPassword, jdbcDriver);
-        List<SentMail> sentList = sentMail.getSentMailList(userid);
-
-        SentMailFormatter formatter = new SentMailFormatter();
-        String messageList = formatter.getMessageTable(sentList);
-
+        String messageList = mailService.getSentMessageList(host, userid, password);
         model.addAttribute("messageList", messageList);
+
         return "sent_mail/sent_mail_list";
     }
+
+    // 보낸 메일 상세 보기
+    @GetMapping("/show_sent_message")
+    public String showSentMessage(@RequestParam Integer msgid, Model model) {
+        String host = (String) session.getAttribute("host");
+        String userid = (String) session.getAttribute("userid");
+        String password = (String) session.getAttribute("password");
+
+        ImapAgent imap = new ImapAgent(host, userid, password);
+        String msg = getSentMessage(imap, msgid, userid);
+
+        model.addAttribute("msg", msg);
+        return "sent_mail/show_sent_mail";
+    }
+
+    private String getSentMessage(ImapAgent imap, int msgid, String userid) {
+        String result = "보낸편지함 메시지를 불러올 수 없습니다.";
+
+        try {
+            if (!imap.connectToStore()) {
+                return result;
+            }
+
+            Folder sentFolder = imap.getStore().getFolder("Sent");
+            if (!sentFolder.exists()) {
+                log.error("Sent 폴더가 존재하지 않습니다.");
+                return result;
+            }
+
+            sentFolder.open(Folder.READ_ONLY);
+            Message message = sentFolder.getMessage(msgid);
+
+            MessageFormatter formatter = new MessageFormatter(userid);
+            formatter.setRequest(request);
+            result = formatter.getMessage(message);
+
+            sentFolder.close(false);
+            imap.getStore().close();
+        } catch (Exception ex) {
+            log.error("보낸 메시지 로딩 오류", ex);
+        }
+
+        return result;
+    }
 }
-
-
