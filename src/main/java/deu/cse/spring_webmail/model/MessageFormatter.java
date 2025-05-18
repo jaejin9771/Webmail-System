@@ -61,7 +61,7 @@ public class MessageFormatter {
               .append("<td>" + parser.getFromAddress() + "</td>")
               .append("<td><a href=show_message?msgid=" + realIndex + ">" + parser.getSubject() + "</a></td>")
               .append("<td>" + parser.getSentDate() + "</td>")
-              .append("<td><a href=delete_mail.do?msgid=" + realIndex + ">삭제</a></td>")
+              .append("<td><a href='#' onclick=\"confirmDelete(" + realIndex + ")\">삭제</a></td>")
               .append("</tr>");
     }
     buffer.append("</table>");

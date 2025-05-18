@@ -38,7 +38,27 @@
             <jsp:include page="sidebar_menu.jsp" />
         </div>
 
-        <!-- 메시지 삭제 링크를 누르면 바로 삭제되어 실수할 수 있음. 해결 방법은? -->
+        <!-- 검색 영역 -->
+        <div id="search-area" style="margin: 20px;">
+            <form action="main_menu" method="get">
+                <select name="searchType">
+                    <option value="subject">제목</option>
+                    <option value="from">보낸 사람</option>
+                </select>
+                <input type="text" name="keyword" required />
+                <button type="submit">검색</button>
+            </form>
+        </div>
+        
+        <script>
+            function confirmDelete(msgid) {
+                if (confirm("정말로 이 메일을 삭제하시겠습니까?")) {
+                    window.location.href = "delete_mail.do?msgid=" + msgid;
+                }
+            }
+        </script>
+
+        <!-- 메일 표시 영역 -->
         <div id="main">
             <c:out value="${messageList}" escapeXml="false" />
         </div>
