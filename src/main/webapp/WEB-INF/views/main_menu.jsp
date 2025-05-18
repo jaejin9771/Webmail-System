@@ -48,8 +48,15 @@
                 <input type="text" name="keyword" required />
                 <button type="submit">검색</button>
             </form>
-
         </div>
+        
+        <script>
+            function confirmDelete(msgid) {
+                if (confirm("정말로 이 메일을 삭제하시겠습니까?")) {
+                    window.location.href = "delete_mail.do?msgid=" + msgid;
+                }
+            }
+        </script>
 
         <!-- 메일 표시 영역 -->
         <div id="main">
