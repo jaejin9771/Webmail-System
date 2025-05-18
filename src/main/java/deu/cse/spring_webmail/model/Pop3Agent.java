@@ -176,6 +176,58 @@ public class Pop3Agent {
         }
     }
 
+    public Message[] getSearchedMessages(String type, String keyword, int page, int pageSize) {
+        List<Message> matchedMessages = new ArrayList<>();
+
+        try {
+            if (!connectToStore()) {
+                return null;
+            }
+
+            Folder inbox = store.getFolder("INBOX");
+            inbox.open(Folder.READ_ONLY);
+
+            int totalMessages = inbox.getMessageCount();
+            Message[] allMessages = inbox.getMessages(1, totalMessages);
+
+            for (int i = allMessages.length - 1; i >= 0; i--) {
+                MessageParser parser = new MessageParser(allMessages[i], userid);
+                parser.parse(false);
+
+                String target = "";
+                if ("subject".equalsIgnoreCase(type)) {
+                    target = parser.getSubject();
+                } else if ("from".equalsIgnoreCase(type)) {
+                    target = parser.getFromAddress();
+                }
+
+                if (target != null && target.toLowerCase().contains(keyword.toLowerCase())) {
+                    matchedMessages.add(allMessages[i]);
+                }
+            }
+
+            // 페이징 처리
+            int totalMatched = matchedMessages.size();
+            int start = (page - 1) * pageSize;
+            int end = Math.min(start + pageSize, totalMatched);
+
+            if (start >= totalMatched) {
+                return new Message[0];
+            }
+
+            Message[] pageMessages = new Message[end - start];
+            for (int i = start; i < end; i++) {
+                pageMessages[i - start] = matchedMessages.get(i);
+            }
+
+            return pageMessages;
+
+        } catch (Exception ex) {
+            log.error("getSearchedMessages() error: ", ex);
+            return null;
+        }
+    }
+
     private boolean connectToStore() {
         boolean status = false;
         Properties props = System.getProperties();
