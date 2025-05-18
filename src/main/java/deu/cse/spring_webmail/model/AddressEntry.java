@@ -15,23 +15,25 @@ import lombok.extern.slf4j.Slf4j;
  * @author skylo
  */
 @Slf4j
-@Getter @Setter
+@Getter
+@Setter
 @NoArgsConstructor
 public class AddressEntry {
+
     private static int count = 0;
-    
+
     private int id;
     private String name;
     private String email;
-    private String phone;
-    
-    public static int getNextId(){
+    private String group;
+
+    public static int getNextId() {
         return ++count;
     }
-    
-    public AddressEntry(String name, String email, String phone){
+
+    public AddressEntry(String name, String email, String group) {
         this.name = name;
         this.email = email;
-        this.phone = phone;
+        this.group = group;
     }
 }

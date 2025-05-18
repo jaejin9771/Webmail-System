@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
  */
 @Service
 public class AddressBookService {
+
     private final List<AddressEntry> addressBook = new ArrayList<>();
 
     public List<AddressEntry> getAll() {
@@ -22,23 +23,23 @@ public class AddressBookService {
     public void add(AddressEntry entry) {
         addressBook.add(entry);
     }
-    
-    public void deleteById(int id){
+
+    public void deleteById(int id) {
         addressBook.removeIf(entry -> entry.getId() == id);
     }
-    
+
     public List<AddressEntry> search(String query) {
         String q = query.toLowerCase().replaceAll("-", "");  // 사용자 검색어에서 - 제거
 
         return addressBook.stream()
-                .filter(entry ->
-                    (entry.getName() != null && entry.getName().toLowerCase().contains(q)) ||
-                    (entry.getEmail() != null && entry.getEmail().toLowerCase().contains(q)) ||
-                    (entry.getPhone() != null && entry.getPhone().replaceAll("-", "").contains(q))  // 전화번호도 - 제거
+                .filter(entry
+                        -> (entry.getName() != null && entry.getName().toLowerCase().contains(q))
+                || (entry.getEmail() != null && entry.getEmail().toLowerCase().contains(q))
+                || (entry.getGroup() != null && entry.getGroup().replaceAll("-", "").contains(q))
                 )
                 .collect(Collectors.toList());
     }
-    
+
     public void update(AddressEntry updatedEntry) {
         for (int i = 0; i < addressBook.size(); i++) {
             if (addressBook.get(i).getId() == updatedEntry.getId()) {
@@ -54,5 +55,18 @@ public class AddressBookService {
                 .findFirst()
                 .orElse(null);
     }
-}
 
+    public boolean existsByEmail(String email) {
+        return addressBook.stream()
+                .anyMatch(entry -> email != null && email.equalsIgnoreCase(entry.getEmail()));
+    }
+    
+    public boolean existsByEmailExcludingId(String email, int id) {
+        return addressBook.stream()
+                .anyMatch(entry
+                        -> entry.getEmail() != null
+                && entry.getEmail().equalsIgnoreCase(email)
+                && entry.getId() != id
+                );
+    }
+}
