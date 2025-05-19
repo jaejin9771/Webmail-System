@@ -27,8 +27,13 @@ public class MailService {
         return formatter.getMessageTable(messages, page, pageSize, totalMessages);
     }
     
-        public String getSentMessageList(String host, String userid, String password) {
+    public String getSentMessageList(String host, String userid, String password) {
         ImapAgent agent = new ImapAgent(host, userid, password);
         return agent.getMessageList();  // 보낸 메일함 (IMAP)
+    }
+        
+    public String getSentMessageList(String host, String userid, String password, Message[] pagedMessages, int page, int pageSize, int totalMessages) {
+        deu.cse.spring_webmail.model.SentMailFormatter formatter = new deu.cse.spring_webmail.model.SentMailFormatter();
+        return formatter.getSentMessageTable(pagedMessages, userid, page, pageSize, totalMessages); // 보낸 메일함 페이징
     }
 }
