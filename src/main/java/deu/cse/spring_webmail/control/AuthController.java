@@ -67,33 +67,15 @@ public class AuthController {
         String userid = (String) session.getAttribute("userid");
         String password = (String) session.getAttribute("password");
 
-        Pop3Agent agent = new Pop3Agent(host, userid, password);
-        agent.setRequest(request);
+        String messageListHtml = mailService.getMessageTable(
+                host, userid, password,
+                page, 20,
+                searchType, keyword,
+                request
+        );
 
-        final int pageSize = 20;
-
-        try {
-            Message[] messages;
-            int totalCount;
-
-            if (searchType != null && keyword != null && !keyword.trim().isEmpty()) {
-                messages = agent.getSearchedMessages(searchType, keyword.trim(), page, pageSize);
-                totalCount = messages.length;  // 검색 결과 수만큼만 출력
-            } else {
-                messages = agent.getMessages(page, pageSize);
-                totalCount = agent.getTotalMessageCount();
-            }
-
-            MessageFormatter formatter = new MessageFormatter(userid);
-            formatter.setRequest((jakarta.servlet.http.HttpServletRequest) session.getAttribute("request"));  // 필요 시 처리
-            String htmlTable = formatter.getMessageTable(messages, page, pageSize, totalCount);
-
-            model.addAttribute("messageList", htmlTable);
-            model.addAttribute("currentPage", page);
-
-        } catch (Exception e) {
-            model.addAttribute("msg", "메일 목록을 불러오는 중 오류 발생: " + e.getMessage());
-        }
+        model.addAttribute("messageList", messageListHtml);
+        model.addAttribute("currentPage", page);
 
         return "main_menu";
     }
