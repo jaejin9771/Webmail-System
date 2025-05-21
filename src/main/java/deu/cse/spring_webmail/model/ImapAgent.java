@@ -1,19 +1,16 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package deu.cse.spring_webmail.model;
 
 import jakarta.mail.*;
+import jakarta.mail.internet.MimeMessage;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import java.util.*;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
 
 @Slf4j
 @NoArgsConstructor
@@ -23,7 +20,12 @@ public class ImapAgent {
     @Getter @Setter private String userid;
     @Getter @Setter private String password;
     @Getter @Setter private Store store;
-    @Getter @Setter private Folder folder;
+    @Getter @Setter private String excveptionType;
+    @Getter @Setter private HttpServletRequest request;
+
+    @Getter private String sender;
+    @Getter private String subject;
+    @Getter private String body;
 
     public ImapAgent(String host, String userid, String password) {
         this.host = host;
@@ -31,162 +33,195 @@ public class ImapAgent {
         this.password = password;
     }
 
-    public boolean connectToStore() {
+    public boolean deleteSentMessage(int msgid, boolean reallyDelete) {
         boolean status = false;
-
-        try {
-            Properties props = new Properties();
-
-            props.setProperty("mail.store.protocol", "imap");
-            props.setProperty("mail.imap.port", "993");               // James가 SSL 포트 993 열고 있음
-            props.setProperty("mail.imap.ssl.enable", "true");        // SSL 사용
-            props.setProperty("mail.imap.ssl.trust", "*");            // 인증서 검증 생략 (테스트 목적)
-
-            Session session = Session.getInstance(props);
-            store = session.getStore("imap");
-            
-            store.connect(host, userid, password);
-
-            status = true;
-        } catch (Exception ex) {
-            log.error("IMAP 서버 연결 실패: {}", ex.getMessage());
-        } finally {
-            return status;
-        }
-    }
-
-    // SMTP로 보낸 메시지를 보낸편지함에 저장
-    public boolean saveToSentFolder(Message msg) {
         if (!connectToStore()) return false;
 
         try {
-            Folder sentFolder = store.getFolder("Sent");
-            if (!sentFolder.exists()) {
-                sentFolder.create(Folder.HOLDS_MESSAGES);
-            }
-            sentFolder.open(Folder.READ_WRITE);
+            Folder folder = store.getFolder("Sent");
+            folder.open(Folder.READ_WRITE);
 
-            msg.setSentDate(new Date());
-            msg.saveChanges();
-            
-            sentFolder.appendMessages(new Message[]{msg});
-            sentFolder.close(false);
-            store.close();
-            
-            return true;
-        } catch (Exception e) {
-            log.error("보낸편지함 저장 실패: {}", e.getMessage());
-            return false;
-        }
-    }
-    public String getMessageList() {
-        String result = "";
+            Message msg = folder.getMessage(msgid);
+            msg.setFlag(Flags.Flag.DELETED, reallyDelete);
 
-        try {
-            Folder defaultFolder = store.getDefaultFolder();
-            Folder[] folders = defaultFolder.list("*");
-
-            // 폴더 가져오기 및 생성
-            folder = store.getFolder("Sent");
-            if (!folder.exists()) {
-                folder.create(Folder.HOLDS_MESSAGES);
-            }
-
-            folder.open(Folder.READ_ONLY);
-
-            // 메시지 목록 불러오기
-            Message[] messages = folder.getMessages();
-
-            FetchProfile fp = new FetchProfile();
-            fp.add(FetchProfile.Item.ENVELOPE);
-            folder.fetch(messages, fp);
-
-            // HTML 테이블로 변환
-            SentMailFormatter formatter = new SentMailFormatter();
-            result = formatter.getSentMessageTable(messages, userid, 1, messages.length, messages.length);
-
-            folder.close(false);    
-            store.close();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            log.error("보낸 메일함 불러오기 실패: {}", e.getMessage());
-            result = "보낸 메일함 로딩 실패: " + e.getMessage();
-        }
-        return result;
-    }  
-    
-        public Message getSentMessage(int msgid) throws MessagingException {
-            if (!connectToStore()) {
-                throw new MessagingException("IMAP 연결 실패");
-            }
-
-            Folder sentFolder = store.getFolder("Sent");
-            if (!sentFolder.exists()) {
-                throw new MessagingException("Sent 폴더가 존재하지 않음");
-            }
-
-        sentFolder.open(Folder.READ_ONLY);
-        Message message = sentFolder.getMessage(msgid);
-
-        return message;
-    }
-        
-    public boolean deleteSentMail(int msgid) {
-        boolean status = false;
-
-        if (!connectToStore()) {
-            return status;
-        }
-
-        try {
-            
-            Folder sentFolder = store.getFolder("Sent");
-            sentFolder.open(Folder.READ_WRITE);
-
-            // msgid에 해당하는 메시지 가져와 삭제 플래그 설정
-            Message msg = sentFolder.getMessage(msgid);
-            msg.setFlag(Flags.Flag.DELETED, true);
-
-            // 폴더 닫을 때 expunge = true로 설정해서 실제 삭제 반영
-            sentFolder.close(true);
+            folder.close(true);
             store.close();
             status = true;
         } catch (Exception ex) {
-            log.error("deleteMessageInSent() error: {}", ex.getMessage());
+            log.error("deleteSentMessage() error: {}", ex.getMessage());
         } finally {
             return status;
         }
     }
-    
-    public Message[] getSentMessages() {
-        if (!connectToStore()) {
-        log.error("IMAP 서버 연결 실패!");
-        return new Message[0];
-        }
-        
+
+    public Message[] getSentMessages(int page, int pageSize) {
+        Message[] messages = null;
         try {
+            if (!connectToStore()) return null;
+
+            Folder folder = store.getFolder("Sent");
+            folder.open(Folder.READ_ONLY);
+
+            int totalMessages = folder.getMessageCount();
+            int end = totalMessages - (page - 1) * pageSize;
+            int start = Math.max(end - pageSize + 1, 1);
+
+            messages = folder.getMessages(start, end);
+            request.setAttribute("messageStartIndex", start);
+        } catch (Exception e) {
+            log.error("getSentMessages() error: ", e);
+        }
+        return messages;
+    }
+
+    public int getSentTotalMessageCount() {
+        int count = 0;
+        try {
+            if (!connectToStore()) return 0;
+
+            Folder folder = store.getFolder("Sent");
+            folder.open(Folder.READ_ONLY);
+            count = folder.getMessageCount();
+        } catch (Exception e) {
+            log.error("getSentTotalMessageCount() error: ", e);
+        }
+        return count;
+    }
+
+    public String getSentMessage(int n) {
+        String result = "IMAP 서버 연결이 되지 않아 메시지를 볼 수 없습니다.";
+
+        if (!connectToStore()) {
+            log.error("IMAP connection failed!");
+            return result;
+        }
+
+        try {
+            Folder folder = store.getFolder("Sent");
+            folder.open(Folder.READ_ONLY);
+
+            Message message = folder.getMessage(n);
+            MessageFormatter formatter = new MessageFormatter(userid);
+            formatter.setRequest(request);
+            result = formatter.getMessage(message);
+
+            sender = formatter.getSender();
+            subject = formatter.getSubject();
+            body = formatter.getBody();
+
+            folder.close(false);
+            store.close();
+        } catch (Exception ex) {
+            log.error("getSentMessage() error: ", ex);
+            result = "getSentMessage() exception = " + ex;
+        } finally {
+            return result;
+        }
+    }
+
+    public Message[] getSearchedSentMessages(String type, String keyword, int page, int pageSize) {
+        List<Message> matchedMessages = new ArrayList<>();
+        try {
+            if (!connectToStore()) return null;
+
+            Folder folder = store.getFolder("Sent");
+            folder.open(Folder.READ_ONLY);
+
+            int totalMessages = folder.getMessageCount();
+            Message[] allMessages = folder.getMessages(1, totalMessages);
+
+            for (int i = allMessages.length - 1; i >= 0; i--) {
+                MessageParser parser = new MessageParser(allMessages[i], userid);
+                parser.parse(false);
+
+                String target = "";
+                if ("subject".equalsIgnoreCase(type)) {
+                    target = parser.getSubject();
+                } else if ("from".equalsIgnoreCase(type)) {
+                    target = parser.getFromAddress();
+                } else if ("to".equalsIgnoreCase(type)) {
+                    target = parser.getToAddress();
+                }
+
+                if (target != null && target.toLowerCase().contains(keyword.toLowerCase())) {
+                    matchedMessages.add(allMessages[i]);
+                }
+            }
+
+            int totalMatched = matchedMessages.size();
+            int start = (page - 1) * pageSize;
+            int end = Math.min(start + pageSize, totalMatched);
+
+            if (start >= totalMatched) return new Message[0];
+
+            Message[] pageMessages = new Message[end - start];
+            for (int i = start; i < end; i++) {
+                pageMessages[i - start] = matchedMessages.get(i);
+            }
+
+            return pageMessages;
+
+        } catch (Exception ex) {
+            log.error("getSearchedSentMessages() error: ", ex);
+            return null;
+        }
+    }
+
+    private boolean connectToStore() {
+        boolean status = false;
+        Properties props = new Properties();
+        props.setProperty("mail.store.protocol", "imap");
+        props.setProperty("mail.imap.port", "993");
+        props.setProperty("mail.imap.ssl.enable", "true");
+        props.setProperty("mail.imap.ssl.trust", "*");
+        props.setProperty("mail.debug", "false");
+
+        try {
+            Session session = Session.getInstance(props);
+            store = session.getStore("imap");
+            store.connect(host, userid, password);
+            status = true;
+            
+            Folder sentFolder = store.getFolder("Sent");
+            if (!sentFolder.exists()) {
+                sentFolder.create(Folder.HOLDS_MESSAGES);
+            }
+        } catch (Exception ex) {
+            log.error("connectToStore() error: {}", ex.getMessage());
+        } finally {
+            return status;
+        }
+    }
+
+    public void saveToSentFolder(Message message) {
+        try {
+            if (!(message instanceof MimeMessage)) {
+                log.warn("지원되지 않는 메시지 타입: {}", message.getClass().getName());
+                return;
+            }
+
+            if (!connectToStore()) {
+                log.error("IMAP 연결 실패 - 보낸 메일 저장 불가");
+                return;
+            }
+
             Folder sentFolder = store.getFolder("Sent");
             if (!sentFolder.exists()) {
                 sentFolder.create(Folder.HOLDS_MESSAGES);
             }
 
-            sentFolder.open(Folder.READ_ONLY);
+            sentFolder.open(Folder.READ_WRITE);
 
-            Message[] messages = sentFolder.getMessages();
+            Message[] messages = new Message[]{new MimeMessage((MimeMessage) message)};
+            sentFolder.appendMessages(messages);
 
-            FetchProfile fp = new FetchProfile();
-            fp.add(FetchProfile.Item.ENVELOPE);
-            sentFolder.fetch(messages, fp);
+            sentFolder.close(false);
+            store.close();
 
-            return messages;
+            log.info("보낸 메일을 Sent 폴더에 저장 완료");
 
         } catch (Exception e) {
-            log.error("보낸 메일 목록 조회 실패: {}", e.getMessage());
-            return new Message[0];
+            log.error("saveToSentFolder() 오류: ", e);
         }
     }
-
-}      
-
-
+}

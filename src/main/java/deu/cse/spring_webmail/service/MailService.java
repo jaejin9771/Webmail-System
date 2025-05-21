@@ -1,11 +1,13 @@
 package deu.cse.spring_webmail.service;
 
+import deu.cse.spring_webmail.model.SentMailFormatter;
 import deu.cse.spring_webmail.model.MessageFormatter;
 import deu.cse.spring_webmail.model.Pop3Agent;
 import jakarta.mail.Message;
 import org.springframework.stereotype.Service;
 import deu.cse.spring_webmail.model.ImapAgent;
 import jakarta.servlet.http.HttpServletRequest;
+
 
 /**
  *
@@ -55,14 +57,34 @@ public class MailService {
             return "<p>메일을 가져오는 중 오류가 발생했습니다: " + e.getMessage() + "</p>";
         }
     }
-
-    public String getSentMessageList(String host, String userid, String password) {
+    
+    public String getSentMessageTable(
+            String host, String userid, String password,
+            int page, int pageSize,
+            String searchType, String keyword,
+            HttpServletRequest request
+    ) {
         ImapAgent agent = new ImapAgent(host, userid, password);
-        return agent.getMessageList();  // 보낸 메일함 (IMAP)
+        agent.setRequest(request);  
+
+        Message[] messages;
+        int totalCount;
+
+        try {
+            if (searchType != null && keyword != null && !keyword.trim().isEmpty()) {
+                messages = agent.getSearchedSentMessages(searchType, keyword.trim(), page, pageSize);
+                totalCount = messages.length;
+            } else {
+                messages = agent.getSentMessages(page, pageSize);
+                totalCount = agent.getSentTotalMessageCount();
+            }
+
+            SentMailFormatter formatter = new SentMailFormatter();
+            return formatter.getSentMessageTable(messages, userid, page, pageSize, totalCount);
+
+        } catch (Exception e) {
+            return "<p>보낸 메일을 가져오는 중 오류가 발생했습니다: " + e.getMessage() + "</p>";
+        }
     }
-        
-    public String getSentMessageList(String host, String userid, String password, Message[] pagedMessages, int page, int pageSize, int totalMessages) {
-        deu.cse.spring_webmail.model.SentMailFormatter formatter = new deu.cse.spring_webmail.model.SentMailFormatter();
-        return formatter.getSentMessageTable(pagedMessages, userid, page, pageSize, totalMessages); // 보낸 메일함 페이징
-    }
+
 }
