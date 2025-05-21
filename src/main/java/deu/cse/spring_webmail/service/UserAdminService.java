@@ -1,5 +1,7 @@
 package deu.cse.spring_webmail.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
@@ -30,9 +32,9 @@ public class UserAdminService {
      * @param password 관리자 인증용 비밀번호
      */
     public UserAdminService(RestTemplate restTemplate,
-                            @Value("${james.webadmin.base-url}") String baseUrl,
-                            @Value("${james.webadmin.auth.id}") String username,
-                            @Value("${james.webadmin.auth.password}") String password) {
+            @Value("${james.webadmin.base-url}") String baseUrl,
+            @Value("${james.webadmin.auth.id}") String username,
+            @Value("${james.webadmin.auth.password}") String password) {
         this.restTemplate = restTemplate;
         this.baseUrl = baseUrl;
         this.username = username;
@@ -58,7 +60,7 @@ public class UserAdminService {
     /**
      * James 서버에 새로운 사용자를 추가
      *
-     * @param userId       생성할 사용자 ID
+     * @param userId 생성할 사용자 ID
      * @param userPassword 생성할 사용자의 비밀번호
      * @return 성공 시 true, 실패 시 false
      */
@@ -114,19 +116,34 @@ public class UserAdminService {
         HttpEntity<Void> request = new HttpEntity<>(createAuthHeaders());
 
         try {
-            ResponseEntity<Map<String, List<String>>> response = restTemplate.exchange(
+            ResponseEntity<String> response = restTemplate.exchange(
                     url,
                     HttpMethod.GET,
                     request,
-                    new ParameterizedTypeReference<>() {}
+                    String.class
             );
 
-            List<String> users = response.getBody().getOrDefault("users", List.of());
-            return users.stream().sorted().collect(Collectors.toList());
+            log.info("Raw JSON Response: {}", response.getBody());
+
+            ObjectMapper objectMapper = new ObjectMapper();
+            List<Map<String, String>> rawList = objectMapper.readValue(
+                    response.getBody(),
+                    new TypeReference<>() {
+            }
+            );
+
+            return rawList.stream()
+                    .map(userMap -> userMap.get("username"))
+                    .sorted()
+                    .toList();
 
         } catch (Exception e) {
             log.error("getUserList() failed: {}", e.getMessage());
             return List.of();
         }
     }
+
+
+
 }
+
