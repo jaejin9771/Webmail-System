@@ -4,36 +4,46 @@
  */
 package deu.cse.spring_webmail.model;
 
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import jakarta.persistence.PrePersist;
+import java.time.LocalDateTime;
 
 /**
  *
- * @author skylo
+ * @author jiye
  */
+@Entity
+@Table(name = "addrbook")
 @Slf4j
 @Getter
 @Setter
 @NoArgsConstructor
 public class AddressEntry {
 
-    private static int count = 0;
-
-    private int id;
-    private String name;
+    @Id
     private String email;
-    private String group;
 
-    public static int getNextId() {
-        return ++count;
-    }
+    private String name;
+    private String phone;
+    private String category;
+    
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
 
-    public AddressEntry(String name, String email, String group) {
-        this.name = name;
+    public AddressEntry(String email, String name, String phone, String category) {
         this.email = email;
-        this.group = group;
+        this.name = name;
+        this.phone = phone;
+        this.category = category;
+    }
+    
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
     }
 }

@@ -10,6 +10,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.web.client.RestTemplate;
 
 @ComponentScan
 @SpringBootApplication
@@ -38,5 +39,4 @@ public class SpringWebmailApplication {
         
         return bean;
     }
-
 }

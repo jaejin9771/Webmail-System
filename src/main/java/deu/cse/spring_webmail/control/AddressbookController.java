@@ -4,15 +4,19 @@ import deu.cse.spring_webmail.model.AddressEntry;
 import deu.cse.spring_webmail.service.AddressBookService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import lombok.extern.slf4j.Slf4j;
-import java.util.stream.Collectors;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
+/**
+ *
+ * @author jiye
+ */
 @Slf4j
 @Controller
 @RequiredArgsConstructor
@@ -22,21 +26,22 @@ public class AddressbookController {
 
     @GetMapping("/addressbook")
     public String showAddressBook(@RequestParam(value = "query", required = false) String query,
-            @RequestParam(value = "editId", required = false) Integer editId,
+            @RequestParam(value = "editEmail", required = false) String editEmail,
+            @RequestParam(value = "sortBy", required = false, defaultValue = "createdAt") String sortBy,
+            @RequestParam(value = "order", required = false, defaultValue = "asc") String order,
             Model model, HttpSession session) {
         model.addAttribute("userid", session.getAttribute("userid"));
+        model.addAttribute("sortBy", sortBy);
+        model.addAttribute("order", order);
 
-        // 수정할 항목 찾기
-        AddressEntry entryToEdit = (editId != null)
-                ? addressBookService.getById(editId)
+        AddressEntry entryToEdit = (editEmail != null)
+                ? addressBookService.getByEmail(editEmail)
                 : new AddressEntry();
+        model.addAttribute("addressEntry", entryToEdit);
 
-        model.addAttribute("addressEntry", entryToEdit);  // 입력칸에 자동 채움
-
-        // 검색 처리
         List<AddressEntry> filteredList = (query != null && !query.isBlank())
                 ? addressBookService.search(query)
-                : addressBookService.getAll();
+                : addressBookService.getAllSorted(sortBy, order);
 
         model.addAttribute("query", query);
         model.addAttribute("addressList", filteredList);
@@ -45,39 +50,42 @@ public class AddressbookController {
 
     @PostMapping("/addressbook")
     public String registerAddress(@ModelAttribute AddressEntry entry,
-            @RequestParam(value = "force", required = false) boolean force,
+            @RequestParam(value = "originalEmail", required = false) String originalEmail,
             RedirectAttributes redirectAttributes) {
 
-        boolean isNew = entry.getId() == 0;
+        String cleanEmail = entry.getEmail().trim().replaceAll("^,+", "");
+        entry.setEmail(cleanEmail);
 
-        if (!force) {
-            boolean isDuplicate = isNew
-                    ? addressBookService.existsByEmail(entry.getEmail())
-                    : addressBookService.existsByEmailExcludingId(entry.getEmail(), entry.getId());
+        boolean isEdit = originalEmail != null && !originalEmail.isBlank();
+        boolean isEmailChanged = isEdit && !cleanEmail.equalsIgnoreCase(originalEmail);
 
-            if (isDuplicate) {
-                redirectAttributes.addFlashAttribute("duplicateEmail", entry.getEmail());
-                redirectAttributes.addFlashAttribute("isEdit", !isNew);  // 등록인지 수정인지 구분
-                redirectAttributes.addFlashAttribute("entry", entry);
-                return "redirect:/addressbook?duplicate=true";
-            }
+        boolean isDuplicate = (!isEdit && addressBookService.existsByEmail(cleanEmail))
+                || (isEdit && isEmailChanged && addressBookService.existsByEmail(cleanEmail));
+
+        if (isDuplicate) {
+            redirectAttributes.addFlashAttribute("duplicateEmail", cleanEmail);
+            redirectAttributes.addFlashAttribute("isEdit", isEdit);
+            redirectAttributes.addFlashAttribute("entry", entry);
+            return "redirect:/addressbook?duplicate=true";
         }
 
-        if (isNew) {
-            entry.setId(AddressEntry.getNextId());
-            addressBookService.add(entry);
-            redirectAttributes.addFlashAttribute("msg", "주소록 등록 완료: " + entry.getName());
-        } else {
-            addressBookService.update(entry);
-            redirectAttributes.addFlashAttribute("msg", "주소록 수정 완료: " + entry.getName());
+        if (isEdit && isEmailChanged) {
+            addressBookService.deleteByEmail(originalEmail);
         }
+
+        addressBookService.add(entry);
+
+        String msg = entry.getEmail() + " 주소가 " + (isEdit ? "수정" : "등록") + "되었습니다.";
+        redirectAttributes.addFlashAttribute("msg", msg);
 
         return "redirect:/addressbook";
     }
 
     @PostMapping("/addressbook/delete")
-    public String deleteAddress(@RequestParam int id) {
-        addressBookService.deleteById(id);
+    public String deleteAddress(@RequestParam String email,
+            RedirectAttributes redirectAttributes) {
+        addressBookService.deleteByEmail(email);
+        redirectAttributes.addFlashAttribute("msg", email + " 주소가 삭제되었습니다.");
         return "redirect:/addressbook";
     }
 
