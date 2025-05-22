@@ -32,29 +32,6 @@ public class AuthController {
     private final HttpSession session;
     private final MailService mailService;
 
-    @Value("${admin.id}")
-    private String ADMIN_ID;
-
-    @PostMapping("/login")
-    public String login(@RequestParam String userid,
-            @RequestParam String passwd,
-            RedirectAttributes attrs) {
-
-        if (session.getAttribute("host") == null) {
-            session.setAttribute("host", "localhost");  // 또는 JAMES_HOST
-        }
-        String host = (String) session.getAttribute("host");
-
-        if (mailService.validateLogin(host, userid, passwd)) {
-            session.setAttribute("userid", userid);
-            session.setAttribute("password", passwd);
-            return userid.equals(ADMIN_ID) ? "redirect:/admin/admin_menu" : "redirect:/main_menu";
-        }
-
-        attrs.addFlashAttribute("msg", "로그인 실패");
-        return "redirect:/login_fail";
-    }
-
     @GetMapping("/main_menu")
     public String showMainMenu(
             @RequestParam(name = "page", defaultValue = "1") int page,
@@ -64,7 +41,7 @@ public class AuthController {
             Model model) {
 
         String host = (String) session.getAttribute("host");
-        String userid = (String) session.getAttribute("userid");
+        String userid = (String) session.getAttribute("username");
         String password = (String) session.getAttribute("password");
 
         String messageListHtml = mailService.getMessageTable(
@@ -83,7 +60,7 @@ public class AuthController {
     @GetMapping("/logout")
     public String logout() {
         session.invalidate();
-        return "redirect:/";
+        return "redirect:/main_menu";
     }
 
     @GetMapping("/login_fail")

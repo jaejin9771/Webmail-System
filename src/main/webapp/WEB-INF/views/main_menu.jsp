@@ -15,7 +15,7 @@
 <jsp:useBean id="pop3" scope="page" class="deu.cse.spring_webmail.model.Pop3Agent" />
 <%
     pop3.setHost((String) session.getAttribute("host"));
-    pop3.setUserid((String) session.getAttribute("userid"));
+    pop3.setUserid((String) session.getAttribute("username"));
     pop3.setPassword((String) session.getAttribute("password"));
 %>
 -->
@@ -40,7 +40,7 @@
 
         <!-- 검색 영역 -->
         <div id="search-area" style="margin: 20px;">
-            <form action="main_menu" method="get">
+            <form action="<c:url value='/main_menu'/>" method="get">
                 <select name="searchType">
                     <option value="subject">제목</option>
                     <option value="from">보낸 사람</option>

@@ -16,7 +16,7 @@
         <br> <br> 
 
         <span style="color: indigo">
-            <strong>사용자: <%= session.getAttribute("userid") %> </strong>
+            <strong>사용자: <%= session.getAttribute("username") %> </strong>
         </span> <br> <br>
         
         <p><a href="write_mail?sender=<%= session.getAttribute("sender") %>"> 답장 하기 </a></p>

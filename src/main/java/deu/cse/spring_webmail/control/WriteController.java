@@ -97,7 +97,7 @@ public class WriteController {
         boolean status = false;
 
         String host = (String) session.getAttribute("host");
-        String userid = (String) session.getAttribute("userid");
+        String userid = (String) session.getAttribute("username");
         String password = (String) session.getAttribute("password");
 
         SmtpAgent agent = new SmtpAgent(host, userid);

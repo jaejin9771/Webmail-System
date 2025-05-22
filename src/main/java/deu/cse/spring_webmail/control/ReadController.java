@@ -56,7 +56,7 @@ public class ReadController {
 
         Pop3Agent pop3 = new Pop3Agent();
         pop3.setHost((String) session.getAttribute("host"));
-        pop3.setUserid((String) session.getAttribute("userid"));
+        pop3.setUserid((String) session.getAttribute("username"));
         pop3.setPassword((String) session.getAttribute("password"));
         pop3.setRequest(request);
 
@@ -69,7 +69,7 @@ public class ReadController {
     }
 
     @GetMapping("/download")
-    public ResponseEntity<Resource> download(@RequestParam("userid") String userId,
+    public ResponseEntity<Resource> download(@RequestParam("username") String userId,
                                              @RequestParam("filename") String fileName) {
         log.debug("userid = {}, filename = {}", userId, fileName);
 
@@ -120,7 +120,7 @@ public class ReadController {
         log.debug("delete_mail.do: msgid = {}", msgId);
 
         String host = (String) session.getAttribute("host");
-        String userid = (String) session.getAttribute("userid");
+        String userid = (String) session.getAttribute("username");
         String password = (String) session.getAttribute("password");
 
         Pop3Agent pop3 = new Pop3Agent(host, userid, password);

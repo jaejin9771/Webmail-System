@@ -33,7 +33,7 @@ public class SentMailController {
             Model model) {
 
         String host = (String) session.getAttribute("host");
-        String userid = (String) session.getAttribute("userid");
+        String userid = (String) session.getAttribute("username");
         String password = (String) session.getAttribute("password");
 
         String sentMessageListHtml = mailService.getSentMessageTable(
@@ -54,7 +54,7 @@ public class SentMailController {
         log.debug("show_sent_message: msgid = {}", msgId);
 
         String host = (String) session.getAttribute("host");
-        String userid = (String) session.getAttribute("userid");
+        String userid = (String) session.getAttribute("username");
         String password = (String) session.getAttribute("password");
 
         ImapAgent imap = new ImapAgent(host, userid, password);
@@ -73,7 +73,7 @@ public class SentMailController {
     public String deleteSentMail(@RequestParam("msgid") Integer msgId, RedirectAttributes attrs) {
 
         String host = (String) session.getAttribute("host");
-        String userid = (String) session.getAttribute("userid");
+        String userid = (String) session.getAttribute("username");
         String password = (String) session.getAttribute("password");
 
         ImapAgent imap = new ImapAgent(host, userid, password);
