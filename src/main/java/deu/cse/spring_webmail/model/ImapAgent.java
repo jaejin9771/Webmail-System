@@ -12,6 +12,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
+/**
+ *
+ * @author junho
+ */
+
 @Slf4j
 @NoArgsConstructor
 public class ImapAgent {
@@ -68,9 +73,11 @@ public class ImapAgent {
 
             messages = folder.getMessages(start, end);
             request.setAttribute("messageStartIndex", start);
+
         } catch (Exception e) {
             log.error("getSentMessages() error: ", e);
         }
+
         return messages;
     }
 
@@ -82,6 +89,7 @@ public class ImapAgent {
             Folder folder = store.getFolder("Sent");
             folder.open(Folder.READ_ONLY);
             count = folder.getMessageCount();
+
         } catch (Exception e) {
             log.error("getSentTotalMessageCount() error: ", e);
         }
@@ -181,7 +189,7 @@ public class ImapAgent {
             store = session.getStore("imap");
             store.connect(host, userid, password);
             status = true;
-            
+
             Folder sentFolder = store.getFolder("Sent");
             if (!sentFolder.exists()) {
                 sentFolder.create(Folder.HOLDS_MESSAGES);
