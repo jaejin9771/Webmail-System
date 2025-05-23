@@ -14,6 +14,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+/**
+ *
+ * @author junho
+ */
+
 @Controller
 @RequiredArgsConstructor
 @PropertySource("classpath:/system.properties")
@@ -25,6 +30,17 @@ public class SentMailController {
     @Autowired private HttpSession session;
     @Autowired private HttpServletRequest request;
 
+    private static final int PAGE_SIZE = 20;
+
+    private ImapAgent createImapAgent() {
+        String host = (String) session.getAttribute("host");
+        String userid = (String) session.getAttribute("username");
+        String password = (String) session.getAttribute("password");
+        ImapAgent imap = new ImapAgent(host, userid, password);
+        imap.setRequest(request);
+        return imap;
+    }
+
     @GetMapping("/sent_mail_list")
     public String showSentMenu(
             @RequestParam(name = "page", defaultValue = "1") int page,
@@ -32,13 +48,11 @@ public class SentMailController {
             @RequestParam(name = "keyword", required = false) String keyword,
             Model model) {
 
-        String host = (String) session.getAttribute("host");
-        String userid = (String) session.getAttribute("username");
-        String password = (String) session.getAttribute("password");
+        ImapAgent imap = createImapAgent();
 
         String sentMessageListHtml = mailService.getSentMessageTable(
-                host, userid, password,
-                page, 20,
+                imap.getHost(), imap.getUserid(), imap.getPassword(),
+                page, PAGE_SIZE,
                 searchType, keyword,
                 request
         );
@@ -53,30 +67,20 @@ public class SentMailController {
     public String showSentMessage(@RequestParam("msgid") Integer msgId, Model model) {
         log.debug("show_sent_message: msgid = {}", msgId);
 
-        String host = (String) session.getAttribute("host");
-        String userid = (String) session.getAttribute("username");
-        String password = (String) session.getAttribute("password");
-
-        ImapAgent imap = new ImapAgent(host, userid, password);
-        imap.setRequest(request);
-
+        ImapAgent imap = createImapAgent();
         String msg = imap.getSentMessage(msgId);
-        session.setAttribute("sender", imap.getSender());
-        session.setAttribute("subject", imap.getSubject());
-        session.setAttribute("body", imap.getBody());
 
         model.addAttribute("msg", msg);
+        model.addAttribute("sender", imap.getSender());
+        model.addAttribute("subject", imap.getSubject());
+        model.addAttribute("body", imap.getBody());
+
         return "sent_mail/show_sent_mail";
     }
 
     @GetMapping("/delete_sent_mail.do")
     public String deleteSentMail(@RequestParam("msgid") Integer msgId, RedirectAttributes attrs) {
-
-        String host = (String) session.getAttribute("host");
-        String userid = (String) session.getAttribute("username");
-        String password = (String) session.getAttribute("password");
-
-        ImapAgent imap = new ImapAgent(host, userid, password);
+        ImapAgent imap = createImapAgent();
         boolean success = imap.deleteSentMessage(msgId, true);
 
         if (success) {
@@ -88,4 +92,3 @@ public class SentMailController {
         return "redirect:/sent_mail_list";
     }
 }
-
