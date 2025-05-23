@@ -4,8 +4,6 @@
  */
 package deu.cse.spring_webmail.model;
 
-import jakarta.mail.Address;
-import jakarta.mail.FetchProfile;
 import jakarta.mail.Flags;
 import jakarta.mail.Folder;
 import jakarta.mail.Message;
@@ -191,7 +189,7 @@ public class Pop3Agent {
             Message[] allMessages = inbox.getMessages(1, totalMessages);
 
             for (int i = allMessages.length - 1; i >= 0; i--) {
-                MessageParser parser = new MessageParser(allMessages[i], userid);
+                MessageParser parser = new MessageParser(allMessages[i], userid, request);
                 parser.parse(false);
 
                 String target = "";
