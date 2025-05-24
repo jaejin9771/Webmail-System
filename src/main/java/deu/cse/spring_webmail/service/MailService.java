@@ -1,13 +1,11 @@
 package deu.cse.spring_webmail.service;
 
-import deu.cse.spring_webmail.model.SentMailFormatter;
 import deu.cse.spring_webmail.model.MessageFormatter;
 import deu.cse.spring_webmail.model.Pop3Agent;
 import jakarta.mail.Message;
 import org.springframework.stereotype.Service;
 import deu.cse.spring_webmail.model.ImapAgent;
 import jakarta.servlet.http.HttpServletRequest;
-
 
 /**
  *
@@ -50,7 +48,7 @@ public class MailService {
             // HTML 테이블을 구성하기 위한 Formatter 사용
             MessageFormatter formatter = new MessageFormatter(userid);
             formatter.setRequest(request);  // 첨부파일 경로 등 설정용
-            return formatter.getMessageTable(messages, page, pageSize, totalCount);
+            return formatter.getMessageTable(messages, page, pageSize, totalCount, "inbox");
 
         } catch (Exception e) {
             // 예외 발생 시 사용자에게 오류 메시지 출력
@@ -79,8 +77,9 @@ public class MailService {
                 totalCount = agent.getSentTotalMessageCount();
             }
 
-            SentMailFormatter formatter = new SentMailFormatter();
-            return formatter.getSentMessageTable(messages, userid, page, pageSize, totalCount);
+            MessageFormatter formatter = new MessageFormatter(userid);
+            formatter.setRequest(request);
+            return formatter.getMessageTable(messages, page, pageSize, totalCount, "sent");
 
         } catch (Exception e) {
             return "<p>보낸 메일을 가져오는 중 오류가 발생했습니다: " + e.getMessage() + "</p>";
