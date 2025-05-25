@@ -4,8 +4,6 @@
  */
 package deu.cse.spring_webmail.model;
 
-import jakarta.mail.Address;
-import jakarta.mail.FetchProfile;
 import jakarta.mail.Flags;
 import jakarta.mail.Folder;
 import jakarta.mail.Message;
@@ -62,16 +60,15 @@ public class Pop3Agent {
     }
 
     public boolean validate() {
-        boolean status = false;
-
         try {
-            status = connectToStore();
-            store.close();
-        } catch (Exception ex) {
-            log.error("Pop3Agent.validate() error : " + ex);
-            status = false;  // for clarity
-        } finally {
+            boolean status = connectToStore();
+            if (store != null) {
+                store.close();
+            }
             return status;
+        } catch (Exception ex) {
+            log.error("validate() error: {}", ex.getMessage());
+            return false;
         }
     }
 
@@ -146,33 +143,31 @@ public class Pop3Agent {
     }
 
     public String getMessage(int n) {
-        String result = "POP3  서버 연결이 되지 않아 메시지를 볼 수 없습니다.";
-
-        if (!connectToStore()) {
-            log.error("POP3 connection failed!");
-            return result;
-        }
-
+        Folder folder = null;
         try {
-            Folder folder = store.getFolder("INBOX");
-            folder.open(Folder.READ_ONLY);
+            if (!connectToStore()) {
+                return "POP3 서버 연결이 되지 않아 메시지를 볼 수 없습니다.";
+            }
 
+            folder = store.getFolder("INBOX");
+            folder.open(Folder.READ_ONLY);
             Message message = folder.getMessage(n);
 
             MessageFormatter formatter = new MessageFormatter(userid);
-            formatter.setRequest(request);  // 210308 LJM - added
-            result = formatter.getMessage(message);
-            sender = formatter.getSender();  // 220612 LJM - added
-            subject = formatter.getSubject();
-            body = formatter.getBody();
+            formatter.setRequest(request);
+            String result = formatter.getMessage(message);
 
-            folder.close(true);
-            store.close();
-        } catch (Exception ex) {
-            log.error("Pop3Agent.getMessageList() : exception = {}", ex);
-            result = "Pop3Agent.getMessage() : exception = " + ex;
-        } finally {
+            this.sender = formatter.getSender();
+            this.subject = formatter.getSubject();
+            this.body = formatter.getBody();
+
             return result;
+        } catch (Exception ex) {
+            log.error("getMessage() error: {}", ex.getMessage());
+            return "getMessage() 예외: " + ex.getMessage();
+        } finally {
+            closeResource(folder);
+            closeStore();
         }
     }
 
@@ -191,7 +186,7 @@ public class Pop3Agent {
             Message[] allMessages = inbox.getMessages(1, totalMessages);
 
             for (int i = allMessages.length - 1; i >= 0; i--) {
-                MessageParser parser = new MessageParser(allMessages[i], userid);
+                MessageParser parser = new MessageParser(allMessages[i], userid, request);
                 parser.parse(false);
 
                 String target = "";
@@ -250,6 +245,26 @@ public class Pop3Agent {
             log.error("connectToStore 예외: {}", ex.getMessage());
         } finally {
             return status;
+        }
+    }
+
+    private void closeResource(Folder folder) {
+        try {
+            if (folder != null && folder.isOpen()) {
+                folder.close(false);
+            }
+        } catch (Exception ex) {
+            log.warn("폴더 닫기 실패: {}", ex.getMessage());
+        }
+    }
+
+    private void closeStore() {
+        try {
+            if (store != null) {
+                store.close();
+            }
+        } catch (Exception ex) {
+            log.warn("store 닫기 실패: {}", ex.getMessage());
         }
     }
 
