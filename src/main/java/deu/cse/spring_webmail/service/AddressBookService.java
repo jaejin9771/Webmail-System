@@ -12,7 +12,10 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.Comparator;
 import java.util.List;
-
+/**
+ *
+ * @author jiye
+ */
 @Service
 @RequiredArgsConstructor
 public class AddressBookService {
@@ -24,7 +27,6 @@ public class AddressBookService {
     }
 
     public List<AddressEntry> getAll() {
-        // 페이지 없이 전체 조회로 변경
         return repository.findAll().stream()
                 .filter(e -> getCurrentUsername().equals(e.getUsername()))
                 .toList();
@@ -92,7 +94,6 @@ public class AddressBookService {
     }
 
     public List<AddressEntry> getAllByUsername(String username) {
-        // Pageable을 지정하거나, findAll 후 필터
         return repository.findAll().stream()
                 .filter(e -> username.equals(e.getUsername()))
                 .toList();

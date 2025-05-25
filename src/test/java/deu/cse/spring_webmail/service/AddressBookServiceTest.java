@@ -24,7 +24,7 @@ public class AddressBookServiceTest {
     private AddressBookService service;
 
     @BeforeEach
-    public void setUp() {
+    private void setUp() {
         MockitoAnnotations.openMocks(this);
 
         // SecurityContext mocking
@@ -38,7 +38,7 @@ public class AddressBookServiceTest {
     }
 
     @Test
-    public void testAdd() {
+    private void testAdd() {
         AddressEntry entry = new AddressEntry("test@example.com", "홍길동", "010-1234-5678", "지인");
         service.add(entry);
 
@@ -48,7 +48,7 @@ public class AddressBookServiceTest {
     }
 
     @Test
-    public void testGetAll() {
+    private void testGetAll() {
         AddressEntry entry1 = new AddressEntry("a@a.com", "홍길동", "010", "친구");
         entry1.setUsername("testuser");
         AddressEntry entry2 = new AddressEntry("b@b.com", "이영희", "010", "직장");
@@ -63,7 +63,7 @@ public class AddressBookServiceTest {
     }
 
     @Test
-    public void testSearch() {
+    private void testSearch() {
         AddressEntry entry1 = new AddressEntry("a@a.com", "홍길동", "010-0000-0000", "친구");
         entry1.setUsername("testuser");
 
@@ -74,14 +74,14 @@ public class AddressBookServiceTest {
     }
 
     @Test
-    public void testExistsByEmail() {
+    private void testExistsByEmail() {
         when(repository.existsByEmailAndUsername("a@a.com", "testuser")).thenReturn(true);
 
         assertTrue(service.existsByEmail("a@a.com"));
     }
 
     @Test
-    public void testGetByEmail_Owned() {
+    private void testGetByEmail_Owned() {
         AddressEntry entry = new AddressEntry("a@a.com", "홍길동", "010", "친구");
         entry.setUsername("testuser");
 
@@ -92,7 +92,7 @@ public class AddressBookServiceTest {
     }
 
     @Test
-    public void testGetByEmail_NotOwned() {
+    private void testGetByEmail_NotOwned() {
         AddressEntry entry = new AddressEntry("a@a.com", "홍길동", "010", "친구");
         entry.setUsername("otheruser");
 
@@ -103,7 +103,7 @@ public class AddressBookServiceTest {
     }
 
     @Test
-    public void testGetAllSortedByNameAsc() {
+    private void testGetAllSortedByNameAsc() {
         AddressEntry entry1 = new AddressEntry("a@a.com", "김영희", "010", "가족");
         entry1.setUsername("testuser");
         entry1.setCreatedAt(LocalDateTime.now());
