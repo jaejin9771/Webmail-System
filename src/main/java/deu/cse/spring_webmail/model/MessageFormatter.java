@@ -25,8 +25,16 @@ public class MessageFormatter {
         int totalPages = (int) Math.ceil((double) totalMessages / pageSize);
         int startIndex = totalMessages - baseNo;
 
+        String showUrl = mode.equals("sent") ? "show_sent_message" : "show_message";
+        String deleteUrl = mode.equals("sent") ? "delete_sent_mail.do" : "delete_mail.do";
+        String pageUrl = mode.equals("sent") ? "sent_mail_list" : "main_menu";
+        String senderHeader = mode.equals("sent") ? "받는 사람" : "보낸 사람";
+        
         appendTableStyle(buffer);
-        buffer.append("<table>").append("<tr><th>No.</th><th>보낸 사람</th><th>제목</th><th>보낸 날짜</th><th>삭제</th></tr>");
+        buffer.append("<table>");
+        buffer.append("<tr><th>No.</th><th>")
+              .append(senderHeader)
+              .append("</th><th>제목</th><th>보낸 날짜</th><th>삭제</th></tr>");
 
         for (int i = messages.length - 1; i >= 0; i--) {
             MessageParser parser = new MessageParser(messages[i], userid);
