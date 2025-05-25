@@ -2,14 +2,17 @@ package deu.cse.spring_webmail.control;
 
 import deu.cse.spring_webmail.model.AddressEntry;
 import deu.cse.spring_webmail.service.AddressBookService;
-import jakarta.servlet.http.HttpSession;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.data.domain.Page;
+import jakarta.servlet.http.HttpSession;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+import java.security.Principal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,12 +28,16 @@ public class AddressbookController {
     private final AddressBookService addressBookService;
 
     @GetMapping("/addressbook")
-    public String showAddressBook(@RequestParam(value = "query", required = false) String query,
+    public String showAddressBook(
+            @RequestParam(value = "query", required = false) String query,
             @RequestParam(value = "editEmail", required = false) String editEmail,
             @RequestParam(value = "sortBy", required = false, defaultValue = "createdAt") String sortBy,
             @RequestParam(value = "order", required = false, defaultValue = "asc") String order,
-            Model model, HttpSession session) {
-        model.addAttribute("userid", session.getAttribute("userid"));
+            @RequestParam(value = "page", required = false, defaultValue = "0") int page,
+            @RequestParam(value = "size", required = false, defaultValue = "10") int size,
+            Model model) {
+
+        model.addAttribute("username", SecurityContextHolder.getContext().getAuthentication().getName());
         model.addAttribute("sortBy", sortBy);
         model.addAttribute("order", order);
 
@@ -39,12 +46,17 @@ public class AddressbookController {
                 : new AddressEntry();
         model.addAttribute("addressEntry", entryToEdit);
 
-        List<AddressEntry> filteredList = (query != null && !query.isBlank())
-                ? addressBookService.search(query)
-                : addressBookService.getAllSorted(sortBy, order);
+        if (query != null && !query.isBlank()) {
+            List<AddressEntry> filteredList = addressBookService.search(query);
+            model.addAttribute("addressList", filteredList);
+            model.addAttribute("query", query);
+        } else {
+            Page<AddressEntry> addressPage = addressBookService.getPagedEntries(sortBy, order, page, size);
+            model.addAttribute("addressList", addressPage.getContent());
+            model.addAttribute("currentPage", page);
+            model.addAttribute("totalPages", addressPage.getTotalPages());
+        }
 
-        model.addAttribute("query", query);
-        model.addAttribute("addressList", filteredList);
         return "addressbook/addressbook";
     }
 
@@ -52,7 +64,6 @@ public class AddressbookController {
     public String registerAddress(@ModelAttribute AddressEntry entry,
             @RequestParam(value = "originalEmail", required = false) String originalEmail,
             RedirectAttributes redirectAttributes) {
-
         String cleanEmail = entry.getEmail().trim().replaceAll("^,+", "");
         entry.setEmail(cleanEmail);
 
@@ -74,16 +85,12 @@ public class AddressbookController {
         }
 
         addressBookService.add(entry);
-
-        String msg = entry.getEmail() + " 주소가 " + (isEdit ? "수정" : "등록") + "되었습니다.";
-        redirectAttributes.addFlashAttribute("msg", msg);
-
+        redirectAttributes.addFlashAttribute("msg", cleanEmail + " 주소가 " + (isEdit ? "수정" : "등록") + "되었습니다.");
         return "redirect:/addressbook";
     }
 
     @PostMapping("/addressbook/delete")
-    public String deleteAddress(@RequestParam String email,
-            RedirectAttributes redirectAttributes) {
+    public String deleteAddress(@RequestParam String email, RedirectAttributes redirectAttributes) {
         addressBookService.deleteByEmail(email);
         redirectAttributes.addFlashAttribute("msg", email + " 주소가 삭제되었습니다.");
         return "redirect:/addressbook";
@@ -91,8 +98,9 @@ public class AddressbookController {
 
     @GetMapping("/api/addressbook/emails")
     @ResponseBody
-    public List<String> getAllEmailsWithNames() {
-        return addressBookService.getAll().stream()
+    public List<String> getEmailsFiltered(@RequestParam("q") String keyword, Principal principal) {
+        String username = principal.getName();
+        return addressBookService.findByKeywordForUser(keyword, username).stream()
                 .map(entry -> entry.getName() + " <" + entry.getEmail() + ">")
                 .collect(Collectors.toList());
     }
