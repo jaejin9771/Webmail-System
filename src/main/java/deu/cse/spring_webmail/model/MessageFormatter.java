@@ -1,3 +1,8 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+
 package deu.cse.spring_webmail.model;
 
 import jakarta.mail.Message;
@@ -6,6 +11,11 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+/**
+ *
+ * @author skylo
+ */
 
 @Slf4j
 @RequiredArgsConstructor
@@ -23,14 +33,24 @@ public class MessageFormatter {
         StringBuilder buffer = new StringBuilder();
         int baseNo = (page - 1) * pageSize;
         int totalPages = (int) Math.ceil((double) totalMessages / pageSize);
-        int startIndex = totalMessages - baseNo;
-
+        int startIndex = totalMessages - (page - 1) * pageSize;
+            
         String showUrl = mode.equals("sent") ? "show_sent_message" : "show_message";
         String deleteUrl = mode.equals("sent") ? "delete_sent_mail.do" : "delete_mail.do";
         String pageUrl = mode.equals("sent") ? "sent_mail_list" : "main_menu";
         String senderHeader = mode.equals("sent") ? "받는 사람" : "보낸 사람";
-        
-        appendTableStyle(buffer);
+
+        // 스타일 + 테이블 헤더
+        buffer.append("<style>")
+                .append("table { table-layout: fixed; width: 100%; word-wrap: break-word; }")
+                .append("th, td { border: 1px solid #333; padding: 8px; text-align: left; }")
+                .append("th:nth-child(1), td:nth-child(1) { width: 5%; }")
+                .append("th:nth-child(2), td:nth-child(2) { width: 20%; }")
+                .append("th:nth-child(3), td:nth-child(3) { width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; }")
+                .append("th:nth-child(4), td:nth-child(4) { width: 20%; }")
+                .append("th:nth-child(5), td:nth-child(5) { width: 10%; }")
+                .append("</style>");
+
         buffer.append("<table>");
         buffer.append("<tr><th>No.</th><th>")
               .append(senderHeader)
@@ -41,8 +61,9 @@ public class MessageFormatter {
             parser.parse(false);
             int no = baseNo + (messages.length - i);
             int realIndex = startIndex - (messages.length - 1 - i);
-             
+            
             if (realIndex <= 0) continue;
+
             String senderValue = mode.equals("sent") ? parser.getToAddress() : parser.getFromAddress();
 
             buffer.append("<tr>")
@@ -54,9 +75,22 @@ public class MessageFormatter {
                   .append("<td><a href='#' onclick=\"confirmDelete(").append(realIndex).append(")\">삭제</a></td>")
                   .append("</tr>");
         }
-        
+
         buffer.append("</table>");
-        appendPagination(buffer, page, totalPages);
+
+        // 페이지 링크
+        buffer.append("<div style='text-align:center; margin-top:10px;'>");
+        if (page > 1) {
+            buffer.append("<a href=").append(pageUrl).append("?page=").append(page - 1).append(">이전</a> | ");
+        }
+        for (int i = Math.max(1, page - 1); i <= Math.min(totalPages, page + 1); i++) {
+            buffer.append("<a href=").append(pageUrl).append("?page=").append(i).append(">").append(i).append("</a> ");
+        }
+        if (page < totalPages) {
+            buffer.append("| <a href=").append(pageUrl).append("?page=").append(page + 1).append(">다음</a>");
+        }
+        buffer.append("</div>");
+
         return buffer.toString();
     }
 
@@ -85,37 +119,11 @@ public class MessageFormatter {
                   .append("&filename=").append(attachedFile.replaceAll(" ", "%20"))
                   .append(" target=_top> ").append(attachedFile).append("</a> <br>");
         }
-        
+
         return buffer.toString();
     }
 
     public void setRequest(HttpServletRequest request) {
         this.request = request;
-    }
-    
-    private void appendTableStyle(StringBuilder buffer) {
-        buffer.append("<style>")
-              .append("table { table-layout: fixed; width: 100%; word-wrap: break-word; }")
-              .append("th, td { border: 1px solid #333; padding: 8px; text-align: left; }")
-              .append("th:nth-child(1), td:nth-child(1) { width: 5%; }")
-              .append("th:nth-child(2), td:nth-child(2) { width: 20%; }")
-              .append("th:nth-child(3), td:nth-child(3) { width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; }")
-              .append("th:nth-child(4), td:nth-child(4) { width: 20%; }")
-              .append("th:nth-child(5), td:nth-child(5) { width: 10%; }")
-              .append("</style>");
-    }
-    
-    private void appendPagination(StringBuilder buffer, int page, int totalPages) {
-        buffer.append("<div style='text-align:center; margin-top:10px;'>");
-        if (page > 1) {
-            buffer.append("<a href=main_menu?page=").append(page - 1).append(">이전</a> | ");
-        }
-        for (int i = Math.max(1, page - 1); i <= Math.min(totalPages, page + 1); i++) {
-            buffer.append("<a href=main_menu?page=").append(i).append(">" + i + "</a> ");
-        }
-        if (page < totalPages) {
-            buffer.append("| <a href=main_menu?page=").append(page + 1).append(">다음</a>");
-        }
-        buffer.append("</div>");
     }
 }
