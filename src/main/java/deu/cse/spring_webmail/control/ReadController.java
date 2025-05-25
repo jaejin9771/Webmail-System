@@ -23,7 +23,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
-import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -65,7 +64,7 @@ public class ReadController {
         session.setAttribute("subject", pop3.getSubject());
         session.setAttribute("body", pop3.getBody());
         model.addAttribute("msg", msg);
-        return "/read_mail/show_message";
+        return "read_mail/show_message";
     }
 
     @GetMapping("/download")
