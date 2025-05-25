@@ -5,12 +5,10 @@
 package deu.cse.spring_webmail.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import jakarta.persistence.PrePersist;
 import java.time.LocalDateTime;
 
 /**
@@ -31,9 +29,12 @@ public class AddressEntry {
     private String name;
     private String phone;
     private String category;
-    
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    @Column(nullable = false)
+    private String username;
 
     public AddressEntry(String email, String name, String phone, String category) {
         this.email = email;
@@ -41,7 +42,7 @@ public class AddressEntry {
         this.phone = phone;
         this.category = category;
     }
-    
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();

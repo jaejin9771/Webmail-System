@@ -13,13 +13,13 @@ public class MessageFormatter {
 
     @NonNull
     private String userid;
-    private HttpServletRequest request;
+    private HttpServletRequest request = null;
 
     @Getter private String sender;
     @Getter private String subject;
     @Getter private String body;
 
-    public String getMessageTable(Message[] messages, int page, int pageSize, int totalMessages) {
+    public String getMessageTable(Message[] messages, int page, int pageSize, int totalMessages, String mode) {
         StringBuilder buffer = new StringBuilder();
         int baseNo = (page - 1) * pageSize;
         int totalPages = (int) Math.ceil((double) totalMessages / pageSize);
@@ -33,11 +33,14 @@ public class MessageFormatter {
             parser.parse(false);
             int no = baseNo + (messages.length - i);
             int realIndex = startIndex - (messages.length - 1 - i);
+             
+            if (realIndex <= 0) continue;
+            String senderValue = mode.equals("sent") ? parser.getToAddress() : parser.getFromAddress();
 
             buffer.append("<tr>")
                   .append("<td>").append(no).append("</td>")
-                  .append("<td>").append(parser.getFromAddress()).append("</td>")
-                  .append("<td><a href=show_message?msgid=").append(realIndex).append(">")
+                  .append("<td>").append(senderValue).append("</td>")
+                  .append("<td><a href='").append(showUrl).append("?msgid=").append(realIndex).append("'>")
                   .append(parser.getSubject()).append("</a></td>")
                   .append("<td>").append(parser.getSentDate()).append("</td>")
                   .append("<td><a href='#' onclick=\"confirmDelete(").append(realIndex).append(")\">삭제</a></td>")
@@ -50,6 +53,8 @@ public class MessageFormatter {
     }
 
     public String getMessage(Message message) {
+        StringBuilder buffer = new StringBuilder();
+
         MessageParser parser = new MessageParser(message, userid, request);
         parser.parse(true);
 
@@ -57,22 +62,20 @@ public class MessageFormatter {
         subject = parser.getSubject();
         body = parser.getBody();
 
-        StringBuilder buffer = new StringBuilder();
-        buffer.append("보낸 사람: ").append(sender).append(" <br>")
-              .append("받은 사람: ").append(parser.getToAddress()).append(" <br>")
-              .append("Cc &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : ").append(parser.getCcAddress()).append(" <br>")
-              .append("보낸 날짜: ").append(parser.getSentDate()).append(" <br>")
-              .append("제 &nbsp;&nbsp;&nbsp;  목: ").append(subject).append(" <br> <hr>")
-              .append(body);
+        buffer.append("보낸 사람: ").append(parser.getFromAddress()).append(" <br>");
+        buffer.append("받은 사람: ").append(parser.getToAddress()).append(" <br>");
+        buffer.append("Cc &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : ").append(parser.getCcAddress()).append(" <br>");
+        buffer.append("보낸 날짜: ").append(parser.getSentDate()).append(" <br>");
+        buffer.append("제 &nbsp;&nbsp;&nbsp;  목: ").append(parser.getSubject()).append(" <br><hr>");
+        
+        buffer.append(parser.getBody());
 
         String attachedFile = parser.getFileName();
         if (attachedFile != null) {
-            buffer.append("<br> <hr> 첨부파일: <a href=download?userid=")
-                  .append(userid)
-                  .append("&filename=")
-                  .append(attachedFile.replaceAll(" ", "%20"))
-                  .append(" target=_top> ")
-                  .append(attachedFile).append("</a> <br>");
+            buffer.append("<br><hr> 첨부파일: <a href=download")
+                  .append("?userid=").append(userid)
+                  .append("&filename=").append(attachedFile.replaceAll(" ", "%20"))
+                  .append(" target=_top> ").append(attachedFile).append("</a> <br>");
         }
         
         return buffer.toString();

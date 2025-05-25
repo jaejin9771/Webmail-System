@@ -1,13 +1,11 @@
 package deu.cse.spring_webmail.service;
 
-import deu.cse.spring_webmail.model.SentMailFormatter;
 import deu.cse.spring_webmail.model.MessageFormatter;
 import deu.cse.spring_webmail.model.Pop3Agent;
 import jakarta.mail.Message;
 import org.springframework.stereotype.Service;
 import deu.cse.spring_webmail.model.ImapAgent;
 import jakarta.servlet.http.HttpServletRequest;
-
 
 /**
  *
@@ -43,8 +41,9 @@ public class MailService {
             }
 
             MessageFormatter formatter = new MessageFormatter(userid);
-            formatter.setRequest(request);
-            return formatter.getMessageTable(messages != null ? messages : new Message[0], page, pageSize, totalCount);
+
+            formatter.setRequest(request);  // 첨부파일 경로 등 설정용
+            return formatter.getMessageTable(messages, page, pageSize, totalCount, "inbox");
 
         } catch (Exception e) {
             return "<p>메일을 가져오는 중 오류가 발생했습니다: " + e.getMessage() + "</p>";
@@ -73,8 +72,9 @@ public class MailService {
                 totalCount = agent.getSentTotalMessageCount();
             }
 
-            SentMailFormatter formatter = new SentMailFormatter();
-            return formatter.getSentMessageTable(messages != null ? messages : new Message[0], userid, page, pageSize, totalCount);
+            MessageFormatter formatter = new MessageFormatter(userid);
+            formatter.setRequest(request);
+            return formatter.getMessageTable(messages, page, pageSize, totalCount, "sent");
 
         } catch (Exception e) {
             return "<p>보낸 메일을 가져오는 중 오류가 발생했습니다: " + e.getMessage() + "</p>";

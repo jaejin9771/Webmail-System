@@ -59,8 +59,7 @@
                     <tr>
                         <td> 수신 </td>
                         <td> <input type="text" name="to" id="to" size="80" autocomplete="off"
-                                    value="${!empty param['sender'] ? param['sender'] : ''}"
-                                    <!--    value=<%=request.getParameter("recv") == null ? "" : request.getParameter("recv")%>  -->
+                                    value="${!empty param['sender'] ? param['sender'] : ''}"/>
                                     <ul id="to-suggestions" class="suggestions"></ul>
                         </td>
                     </tr>
@@ -109,54 +108,51 @@
             function setupAutocomplete(inputId, suggestionId) {
                 const input = document.getElementById(inputId);
                 const suggestionBox = document.getElementById(suggestionId);
-                let emails = [];
 
-                // 1. 주소록 미리 가져오기 (최초 1회)
-                fetch('${pageContext.request.contextPath}/api/addressbook/emails')
-                        .then(res => res.json())
-                        .then(data => {
-                            emails = data;
-                        })
-                        .catch(err => console.error("주소록 불러오기 실패:", err));
-
-                // 2. 입력할 때마다 필터링된 목록 표시
                 input.addEventListener('input', () => {
                     const keyword = input.value.toLowerCase();
-                    suggestionBox.innerHTML = '';
-                    suggestionBox.style.display = 'block';
+                    if (keyword.length === 0) {
+                        suggestionBox.innerHTML = '';
+                        suggestionBox.style.display = 'none';
+                        return;
+                    }
 
-                    emails.forEach(fullText => {
-                        const ltIndex = fullText.indexOf('<');
-                        const gtIndex = fullText.indexOf('>');
+                    fetch(`${pageContext.request.contextPath}/api/addressbook/emails?q=` + encodeURIComponent(keyword))
+                            .then(res => res.json())
+                            .then(data => {
+                                suggestionBox.innerHTML = '';
+                                suggestionBox.style.display = 'block';
 
-                        if (ltIndex > 0 && gtIndex > ltIndex) {
-                            const name = fullText.substring(0, ltIndex).trim();
-                            const emailWithBrackets = fullText.substring(ltIndex, gtIndex + 1).trim();
-                            const email = emailWithBrackets.replace(/[<>]/g, '');
+                                data.forEach(fullText => {
+                                    const ltIndex = fullText.indexOf('<');
+                                    const gtIndex = fullText.indexOf('>');
 
-                            // 필터 조건: 이름 또는 이메일에 keyword 포함
-                            if (name.toLowerCase().includes(keyword) || email.toLowerCase().includes(keyword)) {
-                                const li = document.createElement('li');
-                                li.innerHTML = "<strong>" + name + "</strong> &lt;" + email + "&gt;";
+                                    if (ltIndex > 0 && gtIndex > ltIndex) {
+                                        const name = fullText.substring(0, ltIndex).trim();
+                                        const email = fullText.substring(ltIndex + 1, gtIndex).trim();
 
-                                li.addEventListener('click', () => {
-                                    input.value = email;
-                                    suggestionBox.innerHTML = '';
-                                    suggestionBox.style.display = 'none';
+                                        const li = document.createElement('li');
+                                        li.innerHTML = "<strong>" + name + "</strong> &lt;" + email + "&gt;";
+
+                                        li.addEventListener('click', () => {
+                                            input.value = email;
+                                            suggestionBox.innerHTML = '';
+                                            suggestionBox.style.display = 'none';
+                                        });
+
+                                        suggestionBox.appendChild(li);
+                                    }
                                 });
-
-                                suggestionBox.appendChild(li);
-                            }
-                        }
-                    });
+                            })
+                            .catch(err => {
+                                console.error("주소록 자동완성 오류:", err);
+                            });
                 });
 
-                // 3. 포커스 시 전체 표시 (입력 없을 경우)
                 input.addEventListener('focus', () => {
-                    input.dispatchEvent(new Event('input'));  // input 이벤트 강제 발생
+                    input.dispatchEvent(new Event('input'));
                 });
 
-                // 4. blur 시 목록 닫기
                 input.addEventListener('blur', () => {
                     setTimeout(() => {
                         suggestionBox.innerHTML = '';

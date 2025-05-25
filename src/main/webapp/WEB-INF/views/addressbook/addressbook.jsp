@@ -23,7 +23,6 @@
                     <th colspan="2">주소록 추가</th>
                 </tr>
                 <form method="post" action="${pageContext.request.contextPath}/addressbook">
-                    <!-- 삭제: <input type="hidden" name="email" value="${addressEntry.email}"> -->
                     <input type="hidden" name="originalEmail" value="${addressEntry.email}">
                     <tr>
                         <td>이름</td>
@@ -51,7 +50,7 @@
                                    placeholder="가족, 친구, 회사 등"></td>
                     </tr>
                     <tr>
-                        <td colspan="2" align="center">
+                        <td colspan="2">
                             <button type="submit">등록</button>
                         </td>
                     </tr>
@@ -140,6 +139,16 @@
                     </tr>
                 </c:forEach>
             </table>
+            <div style="margin-top: 10px;">
+                <c:if test="${totalPages > 1}">
+                    <c:forEach begin="0" end="${totalPages - 1}" var="i">
+                        <a href="?page=${i}" 
+                           style="${i == currentPage ? 'font-weight:bold;' : ''}">
+                            [${i + 1}]
+                        </a>
+                    </c:forEach>
+                </c:if>
+            </div>
         </div>
 
         <%@include file="../footer.jspf"%>
