@@ -2,6 +2,7 @@ package deu.cse.spring_webmail.config;
 
 import jakarta.mail.Session;
 import jakarta.mail.Store;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Properties;
 
+@Slf4j
 @Component
 public class JamesAuthenticationProvider implements AuthenticationProvider {
 
@@ -39,9 +41,9 @@ public class JamesAuthenticationProvider implements AuthenticationProvider {
 
     private boolean authenticateWithJamesPOP3(String username, String password) {
         try {
-            System.out.println("POP3 try:");
-            System.out.println("username: " + username);
-            System.out.println("password:: " + password);
+            log.debug("POP3 인증 시도:");
+            log.debug("username: {}", username);
+            log.debug("password: {}", password);  // 민감 정보이므로 실제 운영에서는 로그 기록 주의!
 
             Properties props = new Properties();
             props.put("mail.pop3.host", "localhost");
@@ -50,14 +52,13 @@ public class JamesAuthenticationProvider implements AuthenticationProvider {
             Session session = Session.getDefaultInstance(props);
             Store store = session.getStore("pop3");
 
-            store.connect(username, password);  // 여기가 실패함
+            store.connect(username, password);  // 인증 시도
             store.close();
 
-            System.out.println("[DEBUG] 인증 성공");
+            log.debug("[DEBUG] 인증 성공");
             return true;
         } catch (Exception e) {
-            System.out.println("[DEBUG] 인증 실패: " + e.getMessage());
-            e.printStackTrace();
+            log.error("[DEBUG] 인증 실패: {}", e.getMessage(), e);
             return false;
         }
     }
