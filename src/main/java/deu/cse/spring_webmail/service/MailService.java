@@ -6,6 +6,7 @@ import jakarta.mail.Message;
 import org.springframework.stereotype.Service;
 import deu.cse.spring_webmail.model.ImapAgent;
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.List;
 
 /**
  *
@@ -37,8 +38,9 @@ public class MailService {
             // 검색 조건이 있을 경우
             if (searchType != null && keyword != null && !keyword.trim().isEmpty()) {
                 // 필터링된 메일 목록 반환
-                messages = agent.getSearchedMessages(searchType, keyword.trim(), page, pageSize);
-                totalCount = messages.length;  // 검색 결과 개수만큼 출력
+                List<Message> searched = agent.searchMessages(searchType, keyword.trim());
+                totalCount = searched.size();
+                messages = agent.paginateMessages(searched, page, pageSize);  // 검색 결과 개수만큼 출력
             } else {
                 // 전체 메일 목록 반환
                 messages = agent.getMessages(page, pageSize);
@@ -55,7 +57,7 @@ public class MailService {
             return "<p>메일을 가져오는 중 오류가 발생했습니다: " + e.getMessage() + "</p>";
         }
     }
-    
+
     public String getSentMessageTable(
             String host, String userid, String password,
             int page, int pageSize,
@@ -63,7 +65,7 @@ public class MailService {
             HttpServletRequest request
     ) {
         ImapAgent agent = new ImapAgent(host, userid, password);
-        agent.setRequest(request);  
+        agent.setRequest(request);
 
         Message[] messages;
         int totalCount;
