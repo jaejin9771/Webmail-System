@@ -36,7 +36,6 @@ public class MessageFormatter {
         int startIndex = totalMessages - (page - 1) * pageSize;
             
         String showUrl = mode.equals("sent") ? "show_sent_message" : "show_message";
-        String deleteUrl = mode.equals("sent") ? "delete_sent_mail.do" : "delete_mail.do";
         String pageUrl = mode.equals("sent") ? "sent_mail_list" : "main_menu";
         String senderHeader = mode.equals("sent") ? "받는 사람" : "보낸 사람";
 

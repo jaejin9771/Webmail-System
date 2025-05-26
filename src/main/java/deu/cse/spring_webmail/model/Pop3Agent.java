@@ -112,7 +112,7 @@ public class Pop3Agent {
         Message[] messages = null;
         try {
             if (!connectToStore()) {
-                return null;
+                return new Message[0];
             }
 
             Folder inbox = store.getFolder("INBOX");
@@ -181,7 +181,7 @@ public class Pop3Agent {
 
         try {
             if (!connectToStore()) {
-                return null;
+                return new Message[0];
             }
 
             Folder inbox = store.getFolder("INBOX");
@@ -224,7 +224,7 @@ public class Pop3Agent {
 
         } catch (Exception ex) {
             log.error("getSearchedMessages() error: ", ex);
-            return null;
+            return new Message[0];
         }
     }
 
