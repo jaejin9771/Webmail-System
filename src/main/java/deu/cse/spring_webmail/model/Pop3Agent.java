@@ -4,8 +4,6 @@
  */
 package deu.cse.spring_webmail.model;
 
-import jakarta.mail.Address;
-import jakarta.mail.FetchProfile;
 import jakarta.mail.Flags;
 import jakarta.mail.Folder;
 import jakarta.mail.Message;
@@ -176,12 +174,12 @@ public class Pop3Agent {
         }
     }
 
-    public Message[] getSearchedMessages(String type, String keyword, int page, int pageSize) {
+    public List<Message> searchMessages(String type, String keyword) {
         List<Message> matchedMessages = new ArrayList<>();
 
         try {
             if (!connectToStore()) {
-                return new Message[0];
+                return matchedMessages;
             }
 
             Folder inbox = store.getFolder("INBOX");
@@ -205,27 +203,28 @@ public class Pop3Agent {
                     matchedMessages.add(allMessages[i]);
                 }
             }
+        } catch (Exception e) {
+            log.error("searchMessages() error: ", e);
+        }
 
-            // 페이징 처리
-            int totalMatched = matchedMessages.size();
-            int start = (page - 1) * pageSize;
-            int end = Math.min(start + pageSize, totalMatched);
+        return matchedMessages;
+    }
 
-            if (start >= totalMatched) {
-                return new Message[0];
-            }
+    public Message[] paginateMessages(List<Message> messages, int page, int pageSize) {
+        int total = messages.size();
+        int start = (page - 1) * pageSize;
+        int end = Math.min(start + pageSize, total);
 
-            Message[] pageMessages = new Message[end - start];
-            for (int i = start; i < end; i++) {
-                pageMessages[i - start] = matchedMessages.get(i);
-            }
-
-            return pageMessages;
-
-        } catch (Exception ex) {
-            log.error("getSearchedMessages() error: ", ex);
+        if (start >= total) {
             return new Message[0];
         }
+
+        Message[] pageMessages = new Message[end - start];
+        for (int i = start; i < end; i++) {
+            pageMessages[i - start] = messages.get(i);
+        }
+
+        return pageMessages;
     }
 
     private boolean connectToStore() {
