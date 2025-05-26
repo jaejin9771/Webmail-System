@@ -24,14 +24,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class AddressbookControllerTest {
 
     @Autowired
-    private MockMvc mockMvc;
+    MockMvc mockMvc;
 
     @MockBean
-    private AddressBookService addressBookService;
+    AddressBookService addressBookService;
 
     @Test
     @WithMockUser(username = "testuser")
-    private void testGetAddressBook_Default() throws Exception {
+    void testGetAddressBook_Default() throws Exception {
         List<AddressEntry> dummyList = List.of(
                 new AddressEntry("a@a.com", "홍길동", "010", "친구")
         );
@@ -47,7 +47,7 @@ public class AddressbookControllerTest {
 
     @Test
     @WithMockUser(username = "testuser")
-    private void testPostAddressBook_NewEntry() throws Exception {
+    void testPostAddressBook_NewEntry() throws Exception {
         when(addressBookService.existsByEmail("test@example.com")).thenReturn(false);
 
         mockMvc.perform(post("/addressbook")
@@ -63,7 +63,7 @@ public class AddressbookControllerTest {
 
     @Test
     @WithMockUser(username = "testuser")
-    private void testPostAddressBook_Duplicate() throws Exception {
+    void testPostAddressBook_Duplicate() throws Exception {
         when(addressBookService.existsByEmail("test@example.com")).thenReturn(true);
 
         mockMvc.perform(post("/addressbook")
@@ -77,7 +77,7 @@ public class AddressbookControllerTest {
 
     @Test
     @WithMockUser(username = "testuser")
-    private void testDeleteAddress() throws Exception {
+    void testDeleteAddress() throws Exception {
         mockMvc.perform(post("/addressbook/delete")
                 .param("email", "test@example.com"))
                 .andExpect(status().is3xxRedirection())
@@ -88,7 +88,7 @@ public class AddressbookControllerTest {
 
     @Test
     @WithMockUser(username = "testuser")
-    private void testGetEmailsFiltered() throws Exception {
+    void testGetEmailsFiltered() throws Exception {
         List<AddressEntry> result = List.of(
                 new AddressEntry("test@webmail.com", "홍길동", "010", "친구")
         );
