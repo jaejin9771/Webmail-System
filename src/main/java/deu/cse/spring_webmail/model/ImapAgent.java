@@ -175,7 +175,7 @@ public class ImapAgent {
         }
     }
 
-    private boolean connectToStore() {
+    boolean connectToStore() {
         boolean status = false;
         Properties props = new Properties();
         props.setProperty("mail.store.protocol", "imap");
