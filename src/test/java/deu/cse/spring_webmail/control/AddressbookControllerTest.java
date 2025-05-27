@@ -3,7 +3,7 @@ package deu.cse.spring_webmail.control;
 import deu.cse.spring_webmail.model.AddressEntry;
 import deu.cse.spring_webmail.service.AddressBookService;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -15,11 +15,12 @@ import org.springframework.data.domain.PageImpl;
 import java.util.List;
 
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 
-@SpringBootTest
+@WebMvcTest(AddressbookController.class)
 @AutoConfigureMockMvc
 public class AddressbookControllerTest {
 
@@ -51,10 +52,11 @@ public class AddressbookControllerTest {
         when(addressBookService.existsByEmail("test@example.com")).thenReturn(false);
 
         mockMvc.perform(post("/addressbook")
-                .param("email", "test@example.com")
-                .param("name", "홍길동")
-                .param("phone", "010-1234-5678")
-                .param("category", "친구"))
+                        .param("email", "test@example.com")
+                        .param("name", "홍길동")
+                        .param("phone", "010-1234-5678")
+                        .param("category", "친구")
+                        .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/addressbook"));
 
@@ -67,10 +69,11 @@ public class AddressbookControllerTest {
         when(addressBookService.existsByEmail("test@example.com")).thenReturn(true);
 
         mockMvc.perform(post("/addressbook")
-                .param("email", "test@example.com")
-                .param("name", "홍길동")
-                .param("phone", "010-1234-5678")
-                .param("category", "친구"))
+                        .param("email", "test@example.com")
+                        .param("name", "홍길동")
+                        .param("phone", "010-1234-5678")
+                        .param("category", "친구")
+                        .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/addressbook?duplicate=true"));
     }
@@ -79,7 +82,8 @@ public class AddressbookControllerTest {
     @WithMockUser(username = "testuser")
     void testDeleteAddress() throws Exception {
         mockMvc.perform(post("/addressbook/delete")
-                .param("email", "test@example.com"))
+                        .param("email", "test@example.com")
+                        .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/addressbook"));
 
