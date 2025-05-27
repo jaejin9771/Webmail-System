@@ -13,3 +13,12 @@ CREATE TABLE IF NOT EXISTS addrbook (
     created_at DATETIME,
     username VARCHAR(255) NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS addrbookTest (
+    email VARCHAR(255) NOT NULL PRIMARY KEY,
+    name VARCHAR(255),
+    phone VARCHAR(255),
+    category VARCHAR(255),
+    created_at DATETIME,
+    username VARCHAR(255) NOT NULL
+);
