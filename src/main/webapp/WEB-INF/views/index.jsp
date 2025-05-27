@@ -22,6 +22,7 @@
             <form method="POST" action="${pageContext.request.contextPath}/login">
                 사용자: <input type="text" name="username" size="20" autofocus> <br />
                 암&nbsp;&nbsp;&nbsp;호: <input type="password" name="password" size="20"> <br /> <br />
+                <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
                 <input type="submit" value="로그인" name="B1">&nbsp;&nbsp;&nbsp;
                 <input type="reset" value="다시 입력" name="B2">
             </form>
