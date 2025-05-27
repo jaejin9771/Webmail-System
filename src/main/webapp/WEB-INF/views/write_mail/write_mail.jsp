@@ -55,6 +55,7 @@
         <div id="main">
             <%-- <jsp:include page="mail_send_form.jsp" /> --%>
             <form enctype="multipart/form-data" method="POST" action="write_mail.do" >
+                <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
                 <table>
                     <tr>
                         <td> 수신 </td>
