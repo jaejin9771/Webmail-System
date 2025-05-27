@@ -87,7 +87,7 @@ public class WriteController {
      * 
      * @param to
      * @param cc
-     * @param sub
+     * @param subject
      * @param body
      * @param upFile
      * @return 
