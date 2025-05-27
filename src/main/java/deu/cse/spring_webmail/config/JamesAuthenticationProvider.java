@@ -43,7 +43,7 @@ public class JamesAuthenticationProvider implements AuthenticationProvider {
         throw new BadCredentialsException("아이디 또는 비밀번호가 올바르지 않습니다.");
     }
 
-    private boolean authenticateWithJamesPOP3(String username, String password) {
+    protected boolean authenticateWithJamesPOP3(String username, String password) {
         try {
             log.debug("POP3 인증 시도:");
             log.debug("username: {}", username);
