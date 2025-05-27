@@ -3,6 +3,7 @@ package deu.cse.spring_webmail.config;
 import jakarta.mail.Session;
 import jakarta.mail.Store;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -18,6 +19,9 @@ import java.util.Properties;
 @Component
 public class JamesAuthenticationProvider implements AuthenticationProvider {
 
+    @Value("${admin.id}")
+    private String adminId;
+
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         String username = authentication.getName();
@@ -25,7 +29,7 @@ public class JamesAuthenticationProvider implements AuthenticationProvider {
 
         if (authenticateWithJamesPOP3(username, password)) {
             String role = "ROLE_USER";
-            if ("admin@admin.local".equalsIgnoreCase(username)) {
+            if (adminId.equalsIgnoreCase(username)) {
                 role = "ROLE_ADMIN";
             }
 
