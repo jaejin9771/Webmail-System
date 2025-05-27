@@ -25,7 +25,7 @@ public class SpringSecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.authenticationProvider(jamesAuthenticationProvider);
 
-        http.csrf(csrf -> csrf.disable());
+//        http.csrf(csrf -> csrf.disable());
 
         http.authorizeHttpRequests(auth -> auth
                 .dispatcherTypeMatchers(DispatcherType.FORWARD).permitAll()

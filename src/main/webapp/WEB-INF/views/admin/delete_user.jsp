@@ -36,6 +36,9 @@
                         UserAdminAgent agent = new UserAdminAgent("localhost", 4555, cwd);
             --%>
             <form name="DeleteUser" action="delete_user" method="POST">
+                <%-- csrf.jspf --%>
+                <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
+
                 <%
                     for (String userId : (java.util.List<String>) request.getAttribute("userList")) {
                         out.print("<label><input type=checkbox name=\"selectedUsers\" "

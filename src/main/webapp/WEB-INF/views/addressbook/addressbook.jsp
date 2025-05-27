@@ -23,6 +23,7 @@
                     <th colspan="2">주소록 추가</th>
                 </tr>
                 <form method="post" action="${pageContext.request.contextPath}/addressbook">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
                     <input type="hidden" name="originalEmail" value="${addressEntry.email}">
                     <tr>
                         <td>이름</td>
@@ -131,6 +132,7 @@
                             <form method="post" action="${pageContext.request.contextPath}/addressbook/delete"
                                   style="display:inline-block;"
                                   onsubmit="return confirm('${entry.email} 주소를 삭제하시겠습니까?');">
+                                <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
                                 <input type="hidden" name="email" value="${entry.email}">
                                 <button type="submit">삭제</button>
                             </form>
@@ -175,6 +177,7 @@
                         form.appendChild(input);
                     };
 
+                    addHidden('${_csrf.parameterName}', '${_csrf.token}'); // CSRF 추가
                     addHidden('email', email);
                     addHidden('force', 'true');
                     addHidden('name', "${entry.name}");
