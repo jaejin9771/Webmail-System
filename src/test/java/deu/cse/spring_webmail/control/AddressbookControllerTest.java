@@ -14,11 +14,11 @@ import org.springframework.data.domain.PageImpl;
 
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
 
 @WebMvcTest(AddressbookController.class)
 @AutoConfigureMockMvc
@@ -44,6 +44,35 @@ public class AddressbookControllerTest {
                 .andExpect(view().name("addressbook/addressbook"))
                 .andExpect(model().attributeExists("addressList"))
                 .andExpect(model().attributeExists("username"));
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void testGetAddressBook_WithEditEmail() throws Exception {
+        when(addressBookService.getByEmail("edit@example.com"))
+                .thenReturn(new AddressEntry("edit@example.com", "김편집", "010", "기타"));
+
+        Page<AddressEntry> dummyPage = new PageImpl<>(List.of());
+        when(addressBookService.getPagedEntries(any(), any(), anyInt(), anyInt())).thenReturn(dummyPage);
+
+        mockMvc.perform(get("/addressbook").param("editEmail", "edit@example.com"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("addressbook/addressbook"))
+                .andExpect(model().attributeExists("addressEntry"));
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void testGetAddressBook_WithQuery() throws Exception {
+        when(addressBookService.search("홍길동")).thenReturn(
+                List.of(new AddressEntry("hong@a.com", "홍길동", "010", "친구"))
+        );
+
+        mockMvc.perform(get("/addressbook").param("query", "홍길동"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("addressbook/addressbook"))
+                .andExpect(model().attributeExists("addressList"))
+                .andExpect(model().attribute("query", "홍길동"));
     }
 
     @Test
@@ -76,6 +105,25 @@ public class AddressbookControllerTest {
                         .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/addressbook?duplicate=true"));
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void testPostAddressBook_EditWithEmailChange() throws Exception {
+        when(addressBookService.existsByEmail("new@example.com")).thenReturn(false);
+
+        mockMvc.perform(post("/addressbook")
+                        .param("originalEmail", "old@example.com")
+                        .param("email", "new@example.com")
+                        .param("name", "홍길동")
+                        .param("phone", "010-1234-5678")
+                        .param("category", "친구")
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/addressbook"));
+
+        verify(addressBookService).deleteByEmail("old@example.com");
+        verify(addressBookService).add(any(AddressEntry.class));
     }
 
     @Test
