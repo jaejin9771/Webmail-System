@@ -90,7 +90,9 @@ class JamesAuthenticationProviderTest {
             @Override public Object getDetails() { return null; }
             @Override public Object getCredentials() { return null; }
             @Override public boolean isAuthenticated() { return false; }
-            @Override public void setAuthenticated(boolean isAuthenticated) throws IllegalArgumentException {}
+            @Override public void setAuthenticated(boolean isAuthenticated) throws IllegalArgumentException {
+                throw new IllegalArgumentException("DummyAuth는 인증 상태를 변경할 수 없습니다.");
+            }
             @Override public java.util.Collection<org.springframework.security.core.GrantedAuthority> getAuthorities() {
                 return null;
             }
