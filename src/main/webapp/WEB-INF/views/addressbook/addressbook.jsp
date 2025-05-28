@@ -85,7 +85,7 @@
                                 <option value="createdAt" ${sortBy == 'createdAt' ? 'selected' : ''}>등록순</option>
                                 <option value="name" ${sortBy == 'name' ? 'selected' : ''}>이름</option>
                                 <option value="email" ${sortBy == 'email' ? 'selected' : ''}>이메일</option>
-                                <option value="category" ${sortBy == 'category' ? 'selected' : ''}>그룹</option>
+                                <option value="category" ${sortBy == 'category' ? 'selected' : ''}>카테고리</option>
                             </select>
                         </td>
                         <td style="width: 42%">
@@ -144,7 +144,7 @@
             <div style="margin-top: 10px;">
                 <c:if test="${totalPages > 1}">
                     <c:forEach begin="0" end="${totalPages - 1}" var="i">
-                        <a href="?page=${i}" 
+                        <a href="?page=${i}&sortBy=${sortBy}&order=${order}&query=${query}"
                            style="${i == currentPage ? 'font-weight:bold;' : ''}">
                             [${i + 1}]
                         </a>
