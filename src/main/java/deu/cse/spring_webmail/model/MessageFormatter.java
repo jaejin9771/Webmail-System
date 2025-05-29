@@ -114,7 +114,7 @@ public class MessageFormatter {
         String attachedFile = parser.getFileName();
         if (attachedFile != null) {
             buffer.append("<br><hr> 첨부파일: <a href=download")
-                  .append("?userid=").append(userid)
+                  .append("?username=").append(userid)
                   .append("&filename=").append(attachedFile.replaceAll(" ", "%20"))
                   .append(" target=_top> ").append(attachedFile).append("</a> <br>");
         }
