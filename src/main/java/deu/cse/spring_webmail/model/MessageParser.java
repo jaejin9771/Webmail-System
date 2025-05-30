@@ -50,10 +50,10 @@ public class MessageParser {
     }
 
     public boolean parse(boolean parseBody) {
-        boolean status = false;
+        boolean status;
 
         try {
-            getEnvelope(message);
+            getEnvelope();
             if (parseBody) {
                 getPart(message);
             }
@@ -64,12 +64,11 @@ public class MessageParser {
         } catch (Exception ex) {
             log.error("MessageParser.parse() - Exception : {}", ex.getMessage());
             status = false;
-        } finally {
-            return status;
-        }
+        } 
+        return status;
     }
 
-    private void getEnvelope(Message m) throws Exception {
+    private void getEnvelope() throws Exception {
         fromAddress = message.getFrom()[0].toString();  // 101122 LJM : replaces getMyFrom2()
         toAddress = getAddresses(message.getRecipients(Message.RecipientType.TO));
         Address[] addr = message.getRecipients(Message.RecipientType.CC);
@@ -131,22 +130,6 @@ public class MessageParser {
                     getPart(mp.getBodyPart(i));
                 }
             }
-        }
-    }
-
-    private void printMessage(boolean printBody) {
-        System.out.println("From: " + fromAddress);
-        System.out.println("To: " + toAddress);
-        System.out.println("CC: " + ccAddress);
-        System.out.println("Date: " + sentDate);
-        System.out.println("Subject: " + subject);
-
-        if (printBody) {
-            System.out.println("본 문");
-            System.out.println("---------------------------------");
-            System.out.println(body);
-            System.out.println("---------------------------------");
-            System.out.println("첨부파일: " + fileName);
         }
     }
 
