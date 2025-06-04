@@ -81,11 +81,11 @@ public class AddressbookControllerTest {
         when(addressBookService.existsByEmail("test@example.com")).thenReturn(false);
 
         mockMvc.perform(post("/addressbook")
-                        .param("email", "test@example.com")
-                        .param("name", "홍길동")
-                        .param("phone", "010-1234-5678")
-                        .param("category", "친구")
-                        .with(csrf()))
+                .param("email", "test@example.com")
+                .param("name", "홍길동")
+                .param("phone", "010-1234-5678")
+                .param("category", "친구")
+                .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/addressbook"));
 
@@ -98,11 +98,11 @@ public class AddressbookControllerTest {
         when(addressBookService.existsByEmail("test@example.com")).thenReturn(true);
 
         mockMvc.perform(post("/addressbook")
-                        .param("email", "test@example.com")
-                        .param("name", "홍길동")
-                        .param("phone", "010-1234-5678")
-                        .param("category", "친구")
-                        .with(csrf()))
+                .param("email", "test@example.com")
+                .param("name", "홍길동")
+                .param("phone", "010-1234-5678")
+                .param("category", "친구")
+                .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/addressbook?duplicate=true"));
     }
@@ -113,12 +113,12 @@ public class AddressbookControllerTest {
         when(addressBookService.existsByEmail("new@example.com")).thenReturn(false);
 
         mockMvc.perform(post("/addressbook")
-                        .param("originalEmail", "old@example.com")
-                        .param("email", "new@example.com")
-                        .param("name", "홍길동")
-                        .param("phone", "010-1234-5678")
-                        .param("category", "친구")
-                        .with(csrf()))
+                .param("originalEmail", "old@example.com")
+                .param("email", "new@example.com")
+                .param("name", "홍길동")
+                .param("phone", "010-1234-5678")
+                .param("category", "친구")
+                .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/addressbook"));
 
@@ -130,8 +130,8 @@ public class AddressbookControllerTest {
     @WithMockUser(username = "testuser")
     void testDeleteAddress() throws Exception {
         mockMvc.perform(post("/addressbook/delete")
-                        .param("email", "test@example.com")
-                        .with(csrf()))
+                .param("email", "test@example.com")
+                .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/addressbook"));
 
@@ -150,6 +150,10 @@ public class AddressbookControllerTest {
 
         mockMvc.perform(get("/api/addressbook/emails").param("q", "홍"))
                 .andExpect(status().isOk())
-                .andExpect(content().json("[\"홍길동 <test@webmail.com>\"]"));
+                .andExpect(content().json("""
+                [
+                    { "name": "홍길동", "email": "test@webmail.com" }
+                ]
+            """));
     }
 }

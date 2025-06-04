@@ -4,12 +4,10 @@
 --%>
 
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<c:set var="contextPath" value="${pageContext.request.contextPath}" />
 
 <!DOCTYPE html>
-
-<%-- @taglib  prefix="c" uri="http://java.sun.com/jsp/jstl/core" --%>
-
-
 <html>
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
@@ -61,7 +59,7 @@
                         <td> 수신 </td>
                         <td> <input type="text" name="to" id="to" size="80" autocomplete="off"
                                     value="${!empty param['sender'] ? param['sender'] : ''}"/>
-                                    <ul id="to-suggestions" class="suggestions"></ul>
+                            <ul id="to-suggestions" class="suggestions"></ul>
                         </td>
                     </tr>
                     <tr>
@@ -118,32 +116,28 @@
                         return;
                     }
 
-                    fetch(`${pageContext.request.contextPath}/api/addressbook/emails?q=` + encodeURIComponent(keyword))
+                    fetch('${contextPath}/api/addressbook/emails?q=' + encodeURIComponent(keyword))
                             .then(res => res.json())
                             .then(data => {
                                 suggestionBox.innerHTML = '';
                                 suggestionBox.style.display = 'block';
 
-                                data.forEach(fullText => {
-                                    const ltIndex = fullText.indexOf('<');
-                                    const gtIndex = fullText.indexOf('>');
+                                data.forEach(entry => {
+                                    const name = entry.name;
+                                    const email = entry.email;
 
-                                    if (ltIndex > 0 && gtIndex > ltIndex) {
-                                        const name = fullText.substring(0, ltIndex).trim();
-                                        const email = fullText.substring(ltIndex + 1, gtIndex).trim();
+                                    const li = document.createElement('li');
+                                    li.innerHTML = "<strong>" + name + "</strong> &lt;" + email + "&gt;";
 
-                                        const li = document.createElement('li');
-                                        li.innerHTML = "<strong>" + name + "</strong> &lt;" + email + "&gt;";
+                                    li.addEventListener('click', () => {
+                                        input.value = email;
+                                        suggestionBox.innerHTML = '';
+                                        suggestionBox.style.display = 'none';
+                                    });
 
-                                        li.addEventListener('click', () => {
-                                            input.value = email;
-                                            suggestionBox.innerHTML = '';
-                                            suggestionBox.style.display = 'none';
-                                        });
-
-                                        suggestionBox.appendChild(li);
-                                    }
+                                    suggestionBox.appendChild(li);
                                 });
+
                             })
                             .catch(err => {
                                 console.error("주소록 자동완성 오류:", err);

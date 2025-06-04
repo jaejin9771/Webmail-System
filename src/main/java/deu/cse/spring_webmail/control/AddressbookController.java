@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.security.Principal;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.Map;
 
 /**
  *
@@ -98,10 +99,15 @@ public class AddressbookController {
 
     @GetMapping("/api/addressbook/emails")
     @ResponseBody
-    public List<String> getEmailsFiltered(@RequestParam("q") String keyword, Principal principal) {
+    public List<Map<String, String>> getEmailSuggestions(@RequestParam("q") String keyword, Principal principal) {
         String username = principal.getName();
-        return addressBookService.findByKeywordForUser(keyword, username).stream()
-                .map(entry -> entry.getName() + " <" + entry.getEmail() + ">")
-                .collect(Collectors.toList());
+        List<AddressEntry> entries = addressBookService.findByKeywordForUser(keyword, username);
+
+        return entries.stream()
+                .map(entry -> Map.of(
+                "name", entry.getName(),
+                "email", entry.getEmail()
+        ))
+                .toList();
     }
 }
