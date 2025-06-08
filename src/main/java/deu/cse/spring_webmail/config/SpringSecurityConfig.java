@@ -4,6 +4,7 @@ import jakarta.servlet.DispatcherType;
 import jakarta.servlet.ServletContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -21,11 +22,18 @@ public class SpringSecurityConfig {
     private final ServletContext servletContext;
     private final JamesAuthenticationProvider jamesAuthenticationProvider;
 
+    @Value("${security.csrf.enabled:true}")  // 기본값은 true
+    private boolean csrfEnabled;
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.authenticationProvider(jamesAuthenticationProvider);
 
-//        http.csrf(csrf -> csrf.disable());
+        //  테스트 프로파일에서만 CSRF 비활성화
+        if (!csrfEnabled) {
+            log.info(" Test 환경에서 CSRF 비활성화됨");
+            http.csrf(csrf -> csrf.disable());
+        }
 
         http.authorizeHttpRequests(auth -> auth
                 .dispatcherTypeMatchers(DispatcherType.FORWARD).permitAll()
@@ -36,17 +44,17 @@ public class SpringSecurityConfig {
         );
 
         http.formLogin(form -> form
-                .loginPage("/")                       // contextPath 기준: /webmail/
-                .loginProcessingUrl("/login")         // POST form action
-                .defaultSuccessUrl("/")               // contextPath + / = /webmail/
+                .loginPage("/")
+                .loginProcessingUrl("/login")
+                .defaultSuccessUrl("/")
                 .successHandler(authenticationSuccessHandler())
-                .failureUrl("/login_fail")            // 로그인 실패 시 뷰
+                .failureUrl("/login_fail")
                 .permitAll()
         );
 
         http.logout(logout -> logout
                 .logoutUrl("/logout")
-                .logoutSuccessUrl("/")                // 로그아웃 후 리다이렉션: /webmail/
+                .logoutSuccessUrl("/")
                 .invalidateHttpSession(true)
                 .deleteCookies("JSESSIONID")
                 .permitAll()
@@ -66,3 +74,4 @@ public class SpringSecurityConfig {
         return new RoleBasedSuccessHandler(servletContext);
     }
 }
+
